@@ -1033,16 +1033,33 @@ provider "aws" {
 #                 include_execution_data, level)
 # ============================================================
 
+# IAM role for Step Functions (created via Terraform since local CLI lacks iam:CreateRole)
+resource "aws_iam_role" "step_functions" {
+  name = "step-functions-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "states.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "step_functions_logs" {
+  role       = aws_iam_role.step_functions.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+}
+
 # Dedicated CloudWatch log group for Step Functions
 resource "aws_cloudwatch_log_group" "stepfunctions" {
   name              = "/aws/stepfunctions/example"   # checked: non-empty name
   retention_in_days = 7
 }
 
-
 resource "aws_sfn_state_machine" "example" {
   name     = "example-state-machine"
-  role_arn = "arn:aws:iam::778091236250:role/step-functions-role"  # fixed: real account ID
+  role_arn = aws_iam_role.step_functions.arn
 
   definition = jsonencode({
     Comment = "Example state machine"
