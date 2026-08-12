@@ -316,123 +316,243 @@ provider "aws" {
 # Policies check: delivery_options (tls_policy = REQUIRE)
 # ============================================================
 
-resource "aws_ses_configuration_set" "example" {
-  name = "example-config-set"
-  delivery_options {
-    tls_policy = "Require"               # checked
+# resource "aws_ses_configuration_set" "example" {
+#   name = "example-config-set"
+#   delivery_options {
+#     tls_policy = "Require"               # checked
+#   }
+# }
+
+# resource "aws_sesv2_configuration_set" "example" {
+#   configuration_set_name = "example-v2-config-set"
+#   delivery_options {
+#     tls_policy = "REQUIRE"               # checked
+#   }
+# }
+
+
+
+
+
+# # ============================================================
+# # SNS
+# # Policies check: policy (JSON - no public principal *),
+# #                 topic inline policy
+# # ============================================================
+
+# resource "aws_sns_topic" "example" {
+#   name   = "example-topic"
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [{
+#       Effect    = "Allow"
+#       Principal = { AWS = "arn:aws:iam::778091236250:root" }
+#       Action    = "SNS:Publish"
+#       Resource  = "arn:aws:sns:us-east-1:778091236250:example-topic"
+#     }]
+#   })
+# }
+
+# resource "aws_sns_topic_policy" "example" {
+#   arn = aws_sns_topic.example.arn
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [{
+#       Effect    = "Allow"
+#       Principal = { AWS = "arn:aws:iam::778091236250:root" }
+#       Action    = "SNS:Publish"
+#       Resource  = aws_sns_topic.example.arn
+#     }]
+#   })
+# }
+
+
+
+
+
+# # ============================================================
+# # SQS
+# # Policies check: sqs_managed_sse_enabled, kms_master_key_id,
+# #                 policy (no public * access)
+# # ============================================================
+
+# resource "aws_sqs_queue" "example" {
+#   name              = "example-queue"
+#   kms_master_key_id = "alias/aws/sqs"
+# }
+
+# resource "aws_sqs_queue_policy" "example" {
+#   queue_url = aws_sqs_queue.example.id
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [{
+#       Effect    = "Allow"
+#       Principal = { AWS = "arn:aws:iam::778091236250:root" }
+#       Action    = "sqs:SendMessage"
+#       Resource  = aws_sqs_queue.example.arn
+#     }]
+#   })
+# }
+
+
+
+
+
+# # ============================================================
+# # SSM
+# # Policies check:
+# #   ssm-document-not-public            → aws_ssm_document: permissions must not contain "All" in account_ids
+# #   ssm-automation-block-public-sharing → aws_ssm_service_setting: setting_id = exact path, setting_value = "Disable"
+# #   ssm-automation-logging-enabled     → aws_ssm_service_setting: non-empty setting_value
+# #                                        aws_cloudwatch_log_group: non-empty name
+# # ============================================================
+
+# resource "aws_ssm_document" "example" {
+#   name          = "example-document"
+#   document_type = "Command"
+#   content = jsonencode({
+#     schemaVersion = "2.2"
+#     description   = "Example SSM document"
+#     mainSteps = [{
+#       action = "aws:runShellScript"
+#       name   = "runScript"
+#       inputs = { runCommand = ["echo hello"] }
+#     }]
+#   })
+# }
+
+# resource "aws_ssm_service_setting" "block_sharing" {
+#   setting_id    = "/ssm/documents/console/public-sharing-permission"
+#   setting_value = "Disable"
+# }
+
+# resource "aws_ssm_service_setting" "logging" {
+#   setting_id    = "arn:aws:ssm:us-east-1:778091236250:servicesetting/ssm/automation/customer-script-log-destination"
+#   setting_value = "CloudWatch"
+# }
+
+# resource "aws_cloudwatch_log_group" "ssm_automation" {
+#   name              = "/aws/ssm/automation/executeScript"
+#   retention_in_days = 7
+# }
+
+
+
+
+
+# ============================================================
+# Neptune
+# Policies check: backup_retention_period, enable_cloudwatch_logs_exports,
+#                 copy_tags_to_snapshot, deletion_protection,
+#                 storage_encrypted, kms_key_arn,
+#                 iam_database_authentication_enabled,
+#                 (snapshot) storage_encrypted
+# ============================================================
+
+resource "aws_neptune_subnet_group" "example" {
+  name       = "example-neptune-subnet-group"
+  subnet_ids = [
+    "subnet-00b29a1440b8967e9",  # us-east-1a
+    "subnet-048cfe24c2f869a51",  # us-east-1b
+    "subnet-032dfcd262262bc16",  # us-east-1c
+  ]
+}
+
+resource "aws_neptune_cluster" "example" {
+  cluster_identifier                  = "example-neptune"
+  engine                              = "neptune"
+  backup_retention_period             = 7          # checked
+  deletion_protection                 = false      # false for easy destroy
+  storage_encrypted                   = true       # checked
+  iam_database_authentication_enabled = true       # checked
+  copy_tags_to_snapshot               = true       # checked
+  enable_cloudwatch_logs_exports      = ["audit"]  # checked
+  skip_final_snapshot                 = true
+  neptune_subnet_group_name           = aws_neptune_subnet_group.example.name
+  vpc_security_group_ids              = ["sg-0f755fef803db65d1"]
+}
+
+resource "aws_neptune_cluster_instance" "example" {
+  cluster_identifier = aws_neptune_cluster.example.id
+  instance_class     = "db.t3.medium"
+  engine             = "neptune"
+}
+
+resource "aws_neptune_cluster_snapshot" "example" {
+  db_cluster_identifier          = aws_neptune_cluster.example.id
+  db_cluster_snapshot_identifier = "example-neptune-snapshot"
+}
+
+
+
+
+# ============================================================
+# Network Firewall
+# Policies check: delete_protection, subnet_change_protection,
+#                 logging_configuration (log_destination_config),
+#                 firewall_policy (stateless_default_actions,
+#                 stateless_fragment_default_actions,
+#                 stateless_rule_group_reference),
+#                 rule_group (type=STATELESS, stateless_rule list)
+# ============================================================
+
+resource "aws_networkfirewall_rule_group" "example" {    # ✅ applied & destroyed
+  capacity = 100
+  name     = "example-rule-group"
+  type     = "STATELESS"
+  rule_group {
+    rules_source {
+      stateless_rules_and_custom_actions {
+        stateless_rule {
+          priority = 1
+          rule_definition {
+            actions = ["aws:pass"]
+            match_attributes {
+              source      { address_definition = "0.0.0.0/0" }
+              destination { address_definition = "0.0.0.0/0" }
+            }
+          }
+        }
+      }
+    }
   }
 }
 
-resource "aws_sesv2_configuration_set" "example" {
-  configuration_set_name = "example-v2-config-set"
-  delivery_options {
-    tls_policy = "REQUIRE"               # checked
+resource "aws_networkfirewall_firewall_policy" "example" {  # ✅ applied & destroyed
+  name = "example-firewall-policy"
+  firewall_policy {
+    stateless_default_actions          = ["aws:forward_to_sfe"]
+    stateless_fragment_default_actions = ["aws:forward_to_sfe"]
+    stateless_rule_group_reference {
+      priority     = 1
+      resource_arn = aws_networkfirewall_rule_group.example.arn
+    }
   }
 }
 
-
-
-
-
-# ============================================================
-# SNS
-# Policies check: policy (JSON - no public principal *),
-#                 topic inline policy
-# ============================================================
-
-resource "aws_sns_topic" "example" {
-  name   = "example-topic"
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { AWS = "arn:aws:iam::778091236250:root" }
-      Action    = "SNS:Publish"
-      Resource  = "arn:aws:sns:us-east-1:778091236250:example-topic"
-    }]
-  })
+resource "aws_cloudwatch_log_group" "network_firewall" {   # ✅ applied & destroyed
+  name              = "/aws/network-firewall/example"
+  retention_in_days = 90
 }
 
-resource "aws_sns_topic_policy" "example" {
-  arn = aws_sns_topic.example.arn
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { AWS = "arn:aws:iam::778091236250:root" }
-      Action    = "SNS:Publish"
-      Resource  = aws_sns_topic.example.arn
-    }]
-  })
+resource "aws_networkfirewall_firewall" "example" {        # ✅ applied & destroyed
+  name                     = "example-firewall"
+  firewall_policy_arn      = aws_networkfirewall_firewall_policy.example.arn
+  vpc_id                   = "vpc-0cea84131196c634c"
+  delete_protection        = true
+  subnet_change_protection = true
+  subnet_mapping {
+    subnet_id = "subnet-00b29a1440b8967e9"
+  }
 }
 
-
-
-
-
-# ============================================================
-# SQS
-# Policies check: sqs_managed_sse_enabled, kms_master_key_id,
-#                 policy (no public * access)
-# ============================================================
-
-resource "aws_sqs_queue" "example" {
-  name              = "example-queue"
-  kms_master_key_id = "alias/aws/sqs"
+resource "aws_networkfirewall_logging_configuration" "example" {  # ✅ applied & destroyed
+  firewall_arn = aws_networkfirewall_firewall.example.arn
+  logging_configuration {
+    log_destination_config {
+      log_destination      = { logGroup = "/aws/network-firewall/example" }
+      log_destination_type = "CloudWatchLogs"
+      log_type             = "FLOW"
+    }
+  }
 }
-
-resource "aws_sqs_queue_policy" "example" {
-  queue_url = aws_sqs_queue.example.id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { AWS = "arn:aws:iam::778091236250:root" }
-      Action    = "sqs:SendMessage"
-      Resource  = aws_sqs_queue.example.arn
-    }]
-  })
-}
-
-
-
-
-
-# ============================================================
-# SSM
-# Policies check:
-#   ssm-document-not-public            → aws_ssm_document: permissions must not contain "All" in account_ids
-#   ssm-automation-block-public-sharing → aws_ssm_service_setting: setting_id = exact path, setting_value = "Disable"
-#   ssm-automation-logging-enabled     → aws_ssm_service_setting: non-empty setting_value
-#                                        aws_cloudwatch_log_group: non-empty name
-# ============================================================
-
-resource "aws_ssm_document" "example" {
-  name          = "example-document"
-  document_type = "Command"
-  content = jsonencode({
-    schemaVersion = "2.2"
-    description   = "Example SSM document"
-    mainSteps = [{
-      action = "aws:runShellScript"
-      name   = "runScript"
-      inputs = { runCommand = ["echo hello"] }
-    }]
-  })
-}
-
-resource "aws_ssm_service_setting" "block_sharing" {
-  setting_id    = "/ssm/documents/console/public-sharing-permission"
-  setting_value = "Disable"
-}
-
-resource "aws_ssm_service_setting" "logging" {
-  setting_id    = "arn:aws:ssm:us-east-1:778091236250:servicesetting/ssm/automation/customer-script-log-destination"
-  setting_value = "CloudWatch"
-}
-
-resource "aws_cloudwatch_log_group" "ssm_automation" {
-  name              = "/aws/ssm/automation/executeScript"
-  retention_in_days = 7
-}
-
