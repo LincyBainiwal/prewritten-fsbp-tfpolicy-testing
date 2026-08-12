@@ -21,7 +21,7 @@ resource_policy "aws_opensearch_domain" "vpc_deployment_required" {
     locals {
         vpc_options = core::try(attrs.vpc_options, null)
         has_vpc_options = local.vpc_options != null
-        has_subnet_ids = local.has_vpc_options && core::length(core::try(local.vpc_options[0].subnet_ids, [])) > 0
+        has_subnet_ids = local.has_vpc_options && core::try(core::length(core::try(local.vpc_options[0].subnet_ids, [])), 0) > 0
     }
 
     enforce {

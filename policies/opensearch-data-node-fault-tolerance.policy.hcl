@@ -21,7 +21,7 @@ resource_policy "aws_opensearch_domain" "data_node_fault_tolerance" {
 
     locals {
         cluster_config = core::try(attrs.cluster_config, [])
-        instance_count = core::length(local.cluster_config) > 0 ? core::try(local.cluster_config[0].instance_count, 1) : 1
+        instance_count = core::try(core::length(local.cluster_config), 0) > 0 ? core::try(local.cluster_config[0].instance_count, 1) : 1
         zone_awareness_enabled = core::try(local.cluster_config[0].zone_awareness_enabled, false)
     }
 

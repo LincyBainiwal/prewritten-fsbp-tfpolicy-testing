@@ -22,9 +22,9 @@ resource_policy "aws_opensearch_domain" "error_logging_enabled" {
         log_options = core::try(attrs.log_publishing_options, [])
         application_log_configs = [
             for log_config in local.log_options :
-            log_config if log_config.log_type == "ES_APPLICATION_LOGS"
+            log_config if core::try(log_config.log_type, "") == "ES_APPLICATION_LOGS"
         ]
-        has_application_logs = core::length(local.application_log_configs) > 0
+        has_application_logs = core::try(core::length(local.application_log_configs), 0) > 0
 
         is_enabled = local.has_application_logs ? core::try(local.application_log_configs[0].enabled, true) : false
 

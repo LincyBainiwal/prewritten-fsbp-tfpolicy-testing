@@ -22,16 +22,16 @@ resource_policy "aws_opensearch_domain" "audit_logging_enabled" {
     locals {
         # Extract all log publishing options
         log_options = core::try(attrs.log_publishing_options, [])
-        has_log_options = local.log_options != []
-        
+        has_log_options = core::try(core::length(local.log_options), 0) > 0
+
         # Find audit log configurations
         audit_logs = local.has_log_options ? [
             for log in local.log_options :
             log if core::try(log.log_type, "") == "AUDIT_LOGS"
         ] : []
-        
+
         # Check if audit logging exists and is enabled
-        has_audit_logs = core::length(local.audit_logs) > 0
+        has_audit_logs = core::try(core::length(local.audit_logs), 0) > 0
         audit_enabled = local.has_audit_logs ? core::try(local.audit_logs[0].enabled, false) : false
     }
 

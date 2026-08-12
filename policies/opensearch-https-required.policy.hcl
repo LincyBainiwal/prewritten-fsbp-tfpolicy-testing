@@ -20,7 +20,7 @@ resource_policy "aws_opensearch_domain" "tls_policy_check" {
     enforcement_level = input.opensearch-https-required-enforcement-level
     locals {
         endpoint_options = core::try(attrs.domain_endpoint_options, null)
-        has_endpoint_options = local.endpoint_options != null ? core::length(local.endpoint_options) > 0 : false
+        has_endpoint_options = local.endpoint_options != null ? core::try(core::length(local.endpoint_options), 0) > 0 : false
 
         enforce_https = local.has_endpoint_options ? core::try(local.endpoint_options[0].enforce_https, true) : false
         tls_policy = local.has_endpoint_options ? core::try(local.endpoint_options[0].tls_security_policy, "") : ""
