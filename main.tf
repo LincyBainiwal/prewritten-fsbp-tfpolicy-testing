@@ -1462,23 +1462,23 @@ provider "aws" {
 
 resource "aws_sagemaker_notebook_instance" "example" {
   name                   = "example-notebook"
-  role_arn               = "arn:aws:iam::123456789012:role/sagemaker-role"
+  role_arn               = "arn:aws:iam::778091236250:role/sagemaker-role"
   instance_type          = "ml.t3.medium"
-  subnet_id              = "subnet-12345678"   # checked: must be set (VPC)
-  direct_internet_access = "Disabled"          # checked
-  root_access            = "Disabled"          # checked
-  platform_identifier    = "notebook-al2-v3"   # checked: al2-v3 required (al2-v2 is deprecated)
-  security_groups        = ["sg-12345678"]     # checked
+  subnet_id              = "subnet-00b29a1440b8967e9"  # checked: real subnet us-east-1a
+  direct_internet_access = "Disabled"                  # checked
+  root_access            = "Disabled"                  # checked
+  platform_identifier    = "notebook-al2-v3"           # checked: al2-v3 required
+  security_groups        = ["sg-12345678"]              # checked
 }
 
 resource "aws_sagemaker_model" "example" {
   name               = "example-model"
-  execution_role_arn = "arn:aws:iam::123456789012:role/sagemaker-role"
+  execution_role_arn = "arn:aws:iam::778091236250:role/sagemaker-role"
 
   enable_network_isolation = true            # checked
 
   primary_container {
-    image = "123456789012.dkr.ecr.us-east-1.amazonaws.com/example:latest"
+    image = "778091236250.dkr.ecr.us-east-1.amazonaws.com/example:latest"
 
     image_config {
       repository_access_mode = "Vpc"  # checked: must be Vpc not Platform
@@ -1499,10 +1499,10 @@ resource "aws_sagemaker_endpoint_configuration" "example" {
 
 resource "aws_sagemaker_data_quality_job_definition" "example" {
   name     = "example-data-quality-job"
-  role_arn = "arn:aws:iam::123456789012:role/sagemaker-role"
+  role_arn = "arn:aws:iam::778091236250:role/sagemaker-role"
 
   data_quality_app_specification {
-    image_uri = "123456789012.dkr.ecr.us-east-1.amazonaws.com/example:latest"
+    image_uri = "778091236250.dkr.ecr.us-east-1.amazonaws.com/example:latest"
   }
 
   data_quality_job_input {
