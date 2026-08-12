@@ -787,144 +787,144 @@ resource "aws_glue_job" "example" {
 #                 shared_accounts (snapshots)
 # ============================================================
 
-resource "aws_db_instance" "example" {
-  identifier                          = "example-db"
-  engine                              = "mysql"       # checked
-  engine_version                      = "8.0"
-  instance_class                      = "db.t3.micro"
-  allocated_storage                   = 20
-  username                            = "dbadmin"     # checked: not "admin"
-  password                            = "Admin1234!"
-  storage_encrypted                   = true          # checked
-  backup_retention_period             = 7             # checked
-  deletion_protection                 = true          # checked
-  publicly_accessible                 = false         # checked
-  auto_minor_version_upgrade          = true          # checked
-  copy_tags_to_snapshot               = true          # checked
-  monitoring_interval                 = 60            # checked: > 0
-  monitoring_role_arn                 = "arn:aws:iam::123456789012:role/rds-monitoring-role"
-  iam_database_authentication_enabled = true          # checked
-  multi_az                            = true          # checked
-  db_subnet_group_name                = "example-subnet-group"  # checked
-  enabled_cloudwatch_logs_exports     = ["audit", "error", "general", "slowquery"]  # checked: mysql requires audit,error,general,slowquery
-  port                                = 3307          # checked: not default 3306
-  skip_final_snapshot                 = true
-}
+# resource "aws_db_instance" "example" {
+#   identifier                          = "example-db"
+#   engine                              = "mysql"       # checked
+#   engine_version                      = "8.0"
+#   instance_class                      = "db.t3.micro"
+#   allocated_storage                   = 20
+#   username                            = "dbadmin"     # checked: not "admin"
+#   password                            = "Admin1234!"
+#   storage_encrypted                   = true          # checked
+#   backup_retention_period             = 7             # checked
+#   deletion_protection                 = true          # checked
+#   publicly_accessible                 = false         # checked
+#   auto_minor_version_upgrade          = true          # checked
+#   copy_tags_to_snapshot               = true          # checked
+#   monitoring_interval                 = 60            # checked: > 0
+#   monitoring_role_arn                 = "arn:aws:iam::123456789012:role/rds-monitoring-role"
+#   iam_database_authentication_enabled = true          # checked
+#   multi_az                            = true          # checked
+#   db_subnet_group_name                = "example-subnet-group"  # checked
+#   enabled_cloudwatch_logs_exports     = ["audit", "error", "general", "slowquery"]  # checked: mysql requires audit,error,general,slowquery
+#   port                                = 3307          # checked: not default 3306
+#   skip_final_snapshot                 = true
+# }
 
-resource "aws_rds_cluster_parameter_group" "example" {
-  name        = "example-aurora-mysql-pg"
-  family      = "aurora-mysql8.0"
-  description = "Aurora MySQL parameter group with audit logging"
+# resource "aws_rds_cluster_parameter_group" "example" {
+#   name        = "example-aurora-mysql-pg"
+#   family      = "aurora-mysql8.0"
+#   description = "Aurora MySQL parameter group with audit logging"
 
-  parameter {
-    name  = "server_audit_logging"
-    value = "1"                         # checked: enables audit logging
-  }
+#   parameter {
+#     name  = "server_audit_logging"
+#     value = "1"                         # checked: enables audit logging
+#   }
 
-  parameter {
-    name  = "server_audit_events"
-    value = "CONNECT,QUERY,QUERY_DCL,QUERY_DDL,QUERY_DML"  # checked: non-empty
-  }
-}
+#   parameter {
+#     name  = "server_audit_events"
+#     value = "CONNECT,QUERY,QUERY_DCL,QUERY_DDL,QUERY_DML"  # checked: non-empty
+#   }
+# }
 
-resource "aws_rds_cluster" "example" {
-  cluster_identifier                  = "example-cluster"
-  engine                              = "aurora-mysql"  # checked
-  engine_version                      = "8.0.mysql_aurora.3.04.0"
-  master_username                     = "clusteradmin"  # checked: not "admin"/"awsuser"
-  master_password                     = "Admin1234!"
-  storage_encrypted                   = true            # checked
-  backup_retention_period             = 7               # checked
-  deletion_protection                 = true            # checked
-  copy_tags_to_snapshot               = true            # checked
-  iam_database_authentication_enabled = true            # checked
-  auto_minor_version_upgrade          = true            # checked
-  enabled_cloudwatch_logs_exports     = ["audit", "error"]  # checked
-  availability_zones                  = ["us-east-1a", "us-east-1b", "us-east-1c"]  # checked: multi-AZ
-  port                                = 3307            # checked: not default
-  backtrack_window                    = 72              # checked: aurora-mysql backtracking
-  db_cluster_parameter_group_name     = aws_rds_cluster_parameter_group.example.name  # checked: required for audit logging policy
-  skip_final_snapshot                 = true
-}
+# resource "aws_rds_cluster" "example" {
+#   cluster_identifier                  = "example-cluster"
+#   engine                              = "aurora-mysql"  # checked
+#   engine_version                      = "8.0.mysql_aurora.3.04.0"
+#   master_username                     = "clusteradmin"  # checked: not "admin"/"awsuser"
+#   master_password                     = "Admin1234!"
+#   storage_encrypted                   = true            # checked
+#   backup_retention_period             = 7               # checked
+#   deletion_protection                 = true            # checked
+#   copy_tags_to_snapshot               = true            # checked
+#   iam_database_authentication_enabled = true            # checked
+#   auto_minor_version_upgrade          = true            # checked
+#   enabled_cloudwatch_logs_exports     = ["audit", "error"]  # checked
+#   availability_zones                  = ["us-east-1a", "us-east-1b", "us-east-1c"]  # checked: multi-AZ
+#   port                                = 3307            # checked: not default
+#   backtrack_window                    = 72              # checked: aurora-mysql backtracking
+#   db_cluster_parameter_group_name     = aws_rds_cluster_parameter_group.example.name  # checked: required for audit logging policy
+#   skip_final_snapshot                 = true
+# }
 
-resource "aws_rds_cluster_instance" "example" {
-  identifier                 = "example-cluster-instance"
-  cluster_identifier         = aws_rds_cluster.example.id
-  instance_class             = "db.t3.medium"
-  engine                     = aws_rds_cluster.example.engine
-  engine_version             = aws_rds_cluster.example.engine_version
-  auto_minor_version_upgrade = true   # checked
-  publicly_accessible        = false
-  monitoring_interval        = 60
-  monitoring_role_arn        = "arn:aws:iam::123456789012:role/rds-monitoring-role"
-}
+# resource "aws_rds_cluster_instance" "example" {
+#   identifier                 = "example-cluster-instance"
+#   cluster_identifier         = aws_rds_cluster.example.id
+#   instance_class             = "db.t3.medium"
+#   engine                     = aws_rds_cluster.example.engine
+#   engine_version             = aws_rds_cluster.example.engine_version
+#   auto_minor_version_upgrade = true   # checked
+#   publicly_accessible        = false
+#   monitoring_interval        = 60
+#   monitoring_role_arn        = "arn:aws:iam::123456789012:role/rds-monitoring-role"
+# }
 
-resource "aws_db_snapshot" "example" {
-  db_instance_identifier = aws_db_instance.example.id
-  db_snapshot_identifier = "example-snapshot"
-  # encrypted = true inherited from encrypted db instance (checked)
-}
+# resource "aws_db_snapshot" "example" {
+#   db_instance_identifier = aws_db_instance.example.id
+#   db_snapshot_identifier = "example-snapshot"
+#   # encrypted = true inherited from encrypted db instance (checked)
+# }
 
-resource "aws_db_cluster_snapshot" "example" {
-  db_cluster_identifier          = aws_rds_cluster.example.id
-  db_cluster_snapshot_identifier = "example-cluster-snapshot"
-  # storage_encrypted inherited from encrypted cluster (checked)
-}
+# resource "aws_db_cluster_snapshot" "example" {
+#   db_cluster_identifier          = aws_rds_cluster.example.id
+#   db_cluster_snapshot_identifier = "example-cluster-snapshot"
+#   # storage_encrypted inherited from encrypted cluster (checked)
+# }
 
-resource "aws_db_event_subscription" "instance" {
-  name        = "example-instance-events"
-  sns_topic   = "arn:aws:sns:us-east-1:123456789012:example-topic"
-  source_type = "db-instance"             # checked
-  enabled     = true                      # checked
-  event_categories = [                    # checked
-    "availability", "deletion", "failure", "maintenance", "configuration change"
-  ]
-}
+# resource "aws_db_event_subscription" "instance" {
+#   name        = "example-instance-events"
+#   sns_topic   = "arn:aws:sns:us-east-1:123456789012:example-topic"
+#   source_type = "db-instance"             # checked
+#   enabled     = true                      # checked
+#   event_categories = [                    # checked
+#     "availability", "deletion", "failure", "maintenance", "configuration change"
+#   ]
+# }
 
-resource "aws_db_event_subscription" "cluster" {
-  name        = "example-cluster-events"
-  sns_topic   = "arn:aws:sns:us-east-1:123456789012:example-topic"
-  source_type = "db-cluster"              # checked
-  enabled     = true
-  event_categories = ["failure", "maintenance"]  # checked
-}
+# resource "aws_db_event_subscription" "cluster" {
+#   name        = "example-cluster-events"
+#   sns_topic   = "arn:aws:sns:us-east-1:123456789012:example-topic"
+#   source_type = "db-cluster"              # checked
+#   enabled     = true
+#   event_categories = ["failure", "maintenance"]  # checked
+# }
 
-resource "aws_db_event_subscription" "parameter_group" {
-  name        = "example-pg-events"
-  sns_topic   = "arn:aws:sns:us-east-1:123456789012:example-topic"
-  source_type = "db-parameter-group"      # checked
-  enabled     = true
-  event_categories = ["configuration change"]  # checked
-}
+# resource "aws_db_event_subscription" "parameter_group" {
+#   name        = "example-pg-events"
+#   sns_topic   = "arn:aws:sns:us-east-1:123456789012:example-topic"
+#   source_type = "db-parameter-group"      # checked
+#   enabled     = true
+#   event_categories = ["configuration change"]  # checked
+# }
 
-resource "aws_db_event_subscription" "security_group" {
-  name        = "example-sg-events"
-  sns_topic   = "arn:aws:sns:us-east-1:123456789012:example-topic"
-  source_type = "db-security-group"       # checked
-  enabled     = true
-  event_categories = ["failure", "configuration change"]  # checked
-}
+# resource "aws_db_event_subscription" "security_group" {
+#   name        = "example-sg-events"
+#   sns_topic   = "arn:aws:sns:us-east-1:123456789012:example-topic"
+#   source_type = "db-security-group"       # checked
+#   enabled     = true
+#   event_categories = ["failure", "configuration change"]  # checked
+# }
 
-resource "aws_db_proxy" "example" {
-  name               = "example-proxy"
-  debug_logging      = false
-  engine_family      = "MYSQL"
-  idle_client_timeout = 1800
-  require_tls        = true              # checked
-  role_arn           = "arn:aws:iam::123456789012:role/rds-proxy-role"
-  vpc_subnet_ids     = ["subnet-12345678", "subnet-87654321"]
+# resource "aws_db_proxy" "example" {
+#   name               = "example-proxy"
+#   debug_logging      = false
+#   engine_family      = "MYSQL"
+#   idle_client_timeout = 1800
+#   require_tls        = true              # checked
+#   role_arn           = "arn:aws:iam::123456789012:role/rds-proxy-role"
+#   vpc_subnet_ids     = ["subnet-12345678", "subnet-87654321"]
 
-  auth {
-    auth_scheme = "SECRETS"
-    iam_auth    = "DISABLED"
-    secret_arn  = "arn:aws:secretsmanager:us-east-1:123456789012:secret:example"
-  }
-}
+#   auth {
+#     auth_scheme = "SECRETS"
+#     iam_auth    = "DISABLED"
+#     secret_arn  = "arn:aws:secretsmanager:us-east-1:123456789012:secret:example"
+#   }
+# }
 
-resource "aws_cloudwatch_log_group" "example" {
-  name              = "/aws/example"      # checked: name required by ssm policy
-  retention_in_days = 90
-}
+# resource "aws_cloudwatch_log_group" "example" {
+#   name              = "/aws/example"      # checked: name required by ssm policy
+#   retention_in_days = 90
+# }
 
 
 
@@ -942,59 +942,59 @@ resource "aws_cloudwatch_log_group" "example" {
 #                 enhanced_vpc_routing, config_parameter
 # ============================================================
 
-resource "aws_redshift_parameter_group" "example" {
-  name   = "example-redshift-pg"
-  family = "redshift-1.0"
+# resource "aws_redshift_parameter_group" "example" {
+#   name   = "example-redshift-pg"
+#   family = "redshift-1.0"
 
-  parameter {
-    name  = "require_ssl"
-    value = "true"                      # checked: TLS required
-  }
-}
+#   parameter {
+#     name  = "require_ssl"
+#     value = "true"                      # checked: TLS required
+#   }
+# }
 
-resource "aws_redshift_cluster" "example" {
-  cluster_identifier                  = "example-cluster"
-  database_name                       = "exampledb"
-  master_username                     = "exampleadmin"  # checked: not "awsuser"
-  master_password                     = "Admin1234!"
-  node_type                           = "dc2.large"
-  cluster_type                        = "single-node"
-  encrypted                           = true           # checked
-  kms_key_id                          = "arn:aws:kms:us-east-1:123456789012:key/example"  # checked
-  publicly_accessible                 = false          # checked
-  enhanced_vpc_routing                = true           # checked
-  automated_snapshot_retention_period = 7              # checked
-  allow_version_upgrade               = true           # checked
-  preferred_maintenance_window        = "sun:05:00-sun:06:00"  # checked
-  port                                = 5440           # checked: not default 5439
-  cluster_parameter_group_name        = aws_redshift_parameter_group.example.name  # checked: require_ssl policy
-  skip_final_snapshot                 = true
-}
+# resource "aws_redshift_cluster" "example" {
+#   cluster_identifier                  = "example-cluster"
+#   database_name                       = "exampledb"
+#   master_username                     = "exampleadmin"  # checked: not "awsuser"
+#   master_password                     = "Admin1234!"
+#   node_type                           = "dc2.large"
+#   cluster_type                        = "single-node"
+#   encrypted                           = true           # checked
+#   kms_key_id                          = "arn:aws:kms:us-east-1:123456789012:key/example"  # checked
+#   publicly_accessible                 = false          # checked
+#   enhanced_vpc_routing                = true           # checked
+#   automated_snapshot_retention_period = 7              # checked
+#   allow_version_upgrade               = true           # checked
+#   preferred_maintenance_window        = "sun:05:00-sun:06:00"  # checked
+#   port                                = 5440           # checked: not default 5439
+#   cluster_parameter_group_name        = aws_redshift_parameter_group.example.name  # checked: require_ssl policy
+#   skip_final_snapshot                 = true
+# }
 
-resource "aws_redshift_logging" "example" {
-  cluster_identifier   = aws_redshift_cluster.example.id
-  log_destination_type = "cloudwatch"    # checked
-  log_exports          = ["connectionlog", "userlog", "useractivitylog"]  # checked
-}
+# resource "aws_redshift_logging" "example" {
+#   cluster_identifier   = aws_redshift_cluster.example.id
+#   log_destination_type = "cloudwatch"    # checked
+#   log_exports          = ["connectionlog", "userlog", "useractivitylog"]  # checked
+# }
 
-resource "aws_redshiftserverless_namespace" "example" {
-  namespace_name      = "example-namespace"
-  admin_username      = "exampleadmin"   # checked: not "admin"
-  admin_user_password = "Admin1234!"
-  log_exports         = ["userlog", "connectionlog", "useractivitylog"]  # checked
-}
+# resource "aws_redshiftserverless_namespace" "example" {
+#   namespace_name      = "example-namespace"
+#   admin_username      = "exampleadmin"   # checked: not "admin"
+#   admin_user_password = "Admin1234!"
+#   log_exports         = ["userlog", "connectionlog", "useractivitylog"]  # checked
+# }
 
-resource "aws_redshiftserverless_workgroup" "example" {
-  namespace_name       = aws_redshiftserverless_namespace.example.namespace_name
-  workgroup_name       = "example-workgroup"
-  publicly_accessible  = false           # checked
-  enhanced_vpc_routing = true            # checked
-  subnet_ids           = ["subnet-12345678", "subnet-87654321"]
+# resource "aws_redshiftserverless_workgroup" "example" {
+#   namespace_name       = aws_redshiftserverless_namespace.example.namespace_name
+#   workgroup_name       = "example-workgroup"
+#   publicly_accessible  = false           # checked
+#   enhanced_vpc_routing = true            # checked
+#   subnet_ids           = ["subnet-12345678", "subnet-87654321"]
 
-  config_parameter {                     # checked: require_ssl
-    parameter_key   = "require_ssl"
-    parameter_value = "true"
-  }
-}
+#   config_parameter {                     # checked: require_ssl
+#     parameter_key   = "require_ssl"
+#     parameter_value = "true"
+#   }
+# }
 
 
