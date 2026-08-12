@@ -16,7 +16,7 @@ input "neptune-cluster-backup-retention-check-enforcement-level" {
   default = "advisory"
 }
 
-input "min_backup_retention_period" {
+input "min_backup_retention_period_3" {
     type = number
     default = 7
 }
@@ -24,7 +24,7 @@ input "min_backup_retention_period" {
 resource_policy "aws_neptune_cluster" "backup-retention-period" {
     enforcement_level = input.neptune-cluster-backup-retention-check-enforcement-level
     enforce {
-        condition = input.min_backup_retention_period >= 1 && input.min_backup_retention_period <= 35 && core::try(attrs.backup_retention_period, 1) >= input.min_backup_retention_period
+        condition = input.min_backup_retention_period_3 >= 1 && input.min_backup_retention_period_3 <= 35 && core::try(attrs.backup_retention_period, 1) >= input.min_backup_retention_period_3
         error_message = "The backup retention period for the Neptune cluster is less than the minimum required"
     }
 }
