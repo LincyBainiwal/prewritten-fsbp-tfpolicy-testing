@@ -802,7 +802,7 @@ resource "aws_db_instance" "example" {
   auto_minor_version_upgrade          = true          # checked
   copy_tags_to_snapshot               = true          # checked
   monitoring_interval                 = 60            # checked: > 0
-  monitoring_role_arn                 = "arn:aws:iam::123456789012:role/rds-monitoring-role"
+  monitoring_role_arn                 = "arn:aws:iam::778091236250:role/rds-monitoring-role"
   iam_database_authentication_enabled = true          # checked
   multi_az                            = true          # checked
   db_subnet_group_name                = "example-subnet-group"  # checked
@@ -856,7 +856,7 @@ resource "aws_rds_cluster_instance" "example" {
   auto_minor_version_upgrade = true   # checked
   publicly_accessible        = false
   monitoring_interval        = 60
-  monitoring_role_arn        = "arn:aws:iam::123456789012:role/rds-monitoring-role"
+  monitoring_role_arn        = "arn:aws:iam::778091236250:role/rds-monitoring-role"
 }
 
 resource "aws_db_snapshot" "example" {
@@ -873,7 +873,7 @@ resource "aws_db_cluster_snapshot" "example" {
 
 resource "aws_db_event_subscription" "instance" {
   name        = "example-instance-events"
-  sns_topic   = "arn:aws:sns:us-east-1:123456789012:example-topic"
+  sns_topic   = "arn:aws:sns:us-east-1:778091236250:example-topic"
   source_type = "db-instance"             # checked
   enabled     = true                      # checked
   event_categories = [                    # checked
@@ -883,7 +883,7 @@ resource "aws_db_event_subscription" "instance" {
 
 resource "aws_db_event_subscription" "cluster" {
   name        = "example-cluster-events"
-  sns_topic   = "arn:aws:sns:us-east-1:123456789012:example-topic"
+  sns_topic   = "arn:aws:sns:us-east-1:778091236250:example-topic"
   source_type = "db-cluster"              # checked
   enabled     = true
   event_categories = ["failure", "maintenance"]  # checked
@@ -891,7 +891,7 @@ resource "aws_db_event_subscription" "cluster" {
 
 resource "aws_db_event_subscription" "parameter_group" {
   name        = "example-pg-events"
-  sns_topic   = "arn:aws:sns:us-east-1:123456789012:example-topic"
+  sns_topic   = "arn:aws:sns:us-east-1:778091236250:example-topic"
   source_type = "db-parameter-group"      # checked
   enabled     = true
   event_categories = ["configuration change"]  # checked
@@ -899,7 +899,7 @@ resource "aws_db_event_subscription" "parameter_group" {
 
 resource "aws_db_event_subscription" "security_group" {
   name        = "example-sg-events"
-  sns_topic   = "arn:aws:sns:us-east-1:123456789012:example-topic"
+  sns_topic   = "arn:aws:sns:us-east-1:778091236250:example-topic"
   source_type = "db-security-group"       # checked
   enabled     = true
   event_categories = ["failure", "configuration change"]  # checked
@@ -911,13 +911,13 @@ resource "aws_db_proxy" "example" {
   engine_family      = "MYSQL"
   idle_client_timeout = 1800
   require_tls        = true              # checked
-  role_arn           = "arn:aws:iam::123456789012:role/rds-proxy-role"
+  role_arn           = "arn:aws:iam::778091236250:role/rds-proxy-role"
   vpc_subnet_ids     = ["subnet-12345678", "subnet-87654321"]
 
   auth {
     auth_scheme = "SECRETS"
     iam_auth    = "DISABLED"
-    secret_arn  = "arn:aws:secretsmanager:us-east-1:123456789012:secret:example"
+    secret_arn  = "arn:aws:secretsmanager:us-east-1:778091236250:secret:example"
   }
 }
 
