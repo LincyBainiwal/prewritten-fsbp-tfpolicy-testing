@@ -1271,13 +1271,11 @@ provider "aws" {
 
 # resource "aws_fsx_openzfs_file_system" "example" {
 #   storage_capacity     = 64
-#   subnet_ids           = ["subnet-00b29a1440b8967e9"]        # only 1 subnet_id for MULTI_AZ_1
-#   preferred_subnet_id  = "subnet-00b29a1440b8967e9"          # required for MULTI_AZ_1
-#   standby_subnet_id    = "subnet-048cfe24c2f869a51"          # required for MULTI_AZ_1
-#   deployment_type      = "MULTI_AZ_1"                        # checked
-#   throughput_capacity  = 160                                  # minimum valid value for MULTI_AZ_1
-#   copy_tags_to_backups = true                                 # checked
-#   copy_tags_to_volumes = true                                 # checked
+#   subnet_ids           = ["subnet-00b29a1440b8967e9", "subnet-048cfe24c2f869a51"]
+#   deployment_type      = "MULTI_AZ_1"
+#   throughput_capacity  = 160
+#   copy_tags_to_backups = true
+#   copy_tags_to_volumes = true
 # }
 
 # # aws_fsx_windows_file_system requires active_directory_id or self_managed_active_directory.
