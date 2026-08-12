@@ -1412,3 +1412,36 @@ provider "aws" {
 #   type         = "ORGANIZATION"
 #   principal_id = "arn:aws:organizations::778091236250:organization/o-xxxxxxxxxxxx"
 # }
+
+
+
+
+# ============================================================
+# Lambda
+# Policies check: principal, source_arn, source_account,
+#                 principal_org_id, runtime, vpc_config,
+#                 subnet_ids (multi-AZ)
+# ============================================================
+
+# Lambda blocked by org SCP (explicit deny on lambda:*, iam:*, ec2:Describe*)
+# Same pattern as GuardDuty, WAF Classic, WorkSpaces, Service Catalog.
+# Policies → Unknown at plan time.
+# resource "aws_lambda_function" "example" {
+#   function_name = "example-function"
+#   role          = "arn:aws:iam::778091236250:role/lambda-role"
+#   handler       = "index.handler"
+#   runtime       = "python3.12"
+#   filename      = "function.zip"
+#   vpc_config {
+#     subnet_ids         = ["subnet-00b29a1440b8967e9", "subnet-048cfe24c2f869a51"]
+#     security_group_ids = ["sg-xxxxxxxxx"]
+#   }
+# }
+# resource "aws_lambda_permission" "example" {
+#   statement_id   = "AllowExecutionFromSNS"
+#   action         = "lambda:InvokeFunction"
+#   function_name  = aws_lambda_function.example.function_name
+#   principal      = "sns.amazonaws.com"
+#   source_arn     = "arn:aws:sns:us-east-1:778091236250:example-topic"
+#   source_account = "778091236250"
+# }
