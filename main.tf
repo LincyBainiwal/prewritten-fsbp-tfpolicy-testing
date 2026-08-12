@@ -608,93 +608,93 @@ provider "aws" {
 #                 policy (JSON), user, policy_arn
 # ============================================================
 
-resource "aws_config_config_rule" "access_keys" {
-  name = "access-keys-rotated"            # checked: exact name
-  source {
-    owner             = "AWS"             # checked
-    source_identifier = "ACCESS_KEYS_ROTATED"  # checked
-  }
-  input_parameters = jsonencode({ maxAccessKeyAge = "90" })  # checked
-}
+# resource "aws_config_config_rule" "access_keys" {
+#   name = "access-keys-rotated"            # checked: exact name
+#   source {
+#     owner             = "AWS"             # checked
+#     source_identifier = "ACCESS_KEYS_ROTATED"  # checked
+#   }
+#   input_parameters = jsonencode({ maxAccessKeyAge = "90" })  # checked
+# }
 
-resource "aws_config_config_rule" "unused_credentials" {
-  name = "iam-user-unused-credentials-check"  # checked: exact name
-  source {
-    owner             = "AWS"             # checked
-    source_identifier = "IAM_USER_UNUSED_CREDENTIALS_CHECK"  # checked
-  }
-  input_parameters = jsonencode({ maxCredentialUsageAge = "90" })  # checked
-}
+# resource "aws_config_config_rule" "unused_credentials" {
+#   name = "iam-user-unused-credentials-check"  # checked: exact name
+#   source {
+#     owner             = "AWS"             # checked
+#     source_identifier = "IAM_USER_UNUSED_CREDENTIALS_CHECK"  # checked
+#   }
+#   input_parameters = jsonencode({ maxCredentialUsageAge = "90" })  # checked
+# }
 
-resource "aws_iam_account_password_policy" "example" {
-  minimum_password_length      = 14       # checked
-  require_uppercase_characters = true     # checked
-  require_lowercase_characters = true     # checked
-  require_numbers              = true     # checked
-  require_symbols              = true     # checked
-  max_password_age             = 90       # checked
-  password_reuse_prevention    = 24       # checked
-}
+# resource "aws_iam_account_password_policy" "example" {
+#   minimum_password_length      = 14       # checked
+#   require_uppercase_characters = true     # checked
+#   require_lowercase_characters = true     # checked
+#   require_numbers              = true     # checked
+#   require_symbols              = true     # checked
+#   max_password_age             = 90       # checked
+#   password_reuse_prevention    = 24       # checked
+# }
 
-resource "aws_iam_policy" "example" {
-  name = "example-policy"                 # checked
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect   = "Allow"
-      Action   = ["s3:GetObject"]         # checked: no wildcards like s3:*
-      Resource = "*"
-    }]
-  })
-}
+# resource "aws_iam_policy" "example" {
+#   name = "example-policy"                 # checked
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [{
+#       Effect   = "Allow"
+#       Action   = ["s3:GetObject"]         # checked: no wildcards like s3:*
+#       Resource = "*"
+#     }]
+#   })
+# }
 
-resource "aws_iam_role_policy" "example" {
-  name = "example-role-policy"
-  role = "example-role"
-  policy = jsonencode({                   # checked
-    Version = "2012-10-17"
-    Statement = [{
-      Effect   = "Allow"
-      Action   = ["s3:GetObject"]
-      Resource = "*"
-    }]
-  })
-}
+# resource "aws_iam_role_policy" "example" {
+#   name = "example-role-policy"
+#   role = "example-role"
+#   policy = jsonencode({                   # checked
+#     Version = "2012-10-17"
+#     Statement = [{
+#       Effect   = "Allow"
+#       Action   = ["s3:GetObject"]
+#       Resource = "*"
+#     }]
+#   })
+# }
 
-resource "aws_iam_user_policy" "example" {
-  name = "example-user-policy"
-  user = "example-user"                   # checked
-  policy = jsonencode({                   # checked
-    Version = "2012-10-17"
-    Statement = [{
-      Effect   = "Allow"
-      Action   = ["s3:GetObject"]
-      Resource = "*"
-    }]
-  })
-}
+# resource "aws_iam_user_policy" "example" {
+#   name = "example-user-policy"
+#   user = "example-user"                   # checked
+#   policy = jsonencode({                   # checked
+#     Version = "2012-10-17"
+#     Statement = [{
+#       Effect   = "Allow"
+#       Action   = ["s3:GetObject"]
+#       Resource = "*"
+#     }]
+#   })
+# }
 
-resource "aws_iam_group_policy" "example" {
-  name  = "example-group-policy"
-  group = "example-group"
-  policy = jsonencode({                   # checked
-    Version = "2012-10-17"
-    Statement = [{
-      Effect   = "Allow"
-      Action   = ["s3:GetObject"]
-      Resource = "*"
-    }]
-  })
-}
+# resource "aws_iam_group_policy" "example" {
+#   name  = "example-group-policy"
+#   group = "example-group"
+#   policy = jsonencode({                   # checked
+#     Version = "2012-10-17"
+#     Statement = [{
+#       Effect   = "Allow"
+#       Action   = ["s3:GetObject"]
+#       Resource = "*"
+#     }]
+#   })
+# }
 
-resource "aws_iam_access_key" "example" {
-  user = "example-user"                   # checked: not "root"
-}
+# resource "aws_iam_access_key" "example" {
+#   user = "example-user"                   # checked: not "root"
+# }
 
-resource "aws_iam_user_policy_attachment" "example" {
-  user       = "example-user"             # checked
-  policy_arn = aws_iam_policy.example.arn # checked
-}
+# resource "aws_iam_user_policy_attachment" "example" {
+#   user       = "example-user"             # checked
+#   policy_arn = aws_iam_policy.example.arn # checked
+# }
 
 # # ============================================================
 # # Inspector
@@ -702,19 +702,19 @@ resource "aws_iam_user_policy_attachment" "example" {
 # #                 (ec2, ecr, lambda, lambda_code)
 # # ============================================================
 
-resource "aws_inspector2_enabler" "example" {
-  account_ids    = ["123456789012"]
-  resource_types = ["EC2", "ECR", "LAMBDA", "LAMBDA_CODE"]  # checked
-}
+# resource "aws_inspector2_enabler" "example" {
+#   account_ids    = ["123456789012"]
+#   resource_types = ["EC2", "ECR", "LAMBDA", "LAMBDA_CODE"]  # checked
+# }
 
-resource "aws_inspector2_organization_configuration" "example" {
-  auto_enable {                           # checked
-    ec2         = true                   # checked
-    ecr         = true                   # checked
-    lambda      = true                   # checked
-    lambda_code = true                   # checked
-  }
-}
+# resource "aws_inspector2_organization_configuration" "example" {
+#   auto_enable {                           # checked
+#     ec2         = true                   # checked
+#     ecr         = true                   # checked
+#     lambda      = true                   # checked
+#     lambda_code = true                   # checked
+#   }
+# }
 
 
 
@@ -724,29 +724,277 @@ resource "aws_inspector2_organization_configuration" "example" {
 # # Policies check: status
 # # ============================================================
 
-resource "aws_macie2_account" "example" {
-  finding_publishing_frequency = "FIFTEEN_MINUTES"
-  status                       = "ENABLED"  # checked
-}
+# resource "aws_macie2_account" "example" {
+#   finding_publishing_frequency = "FIFTEEN_MINUTES"
+#   status                       = "ENABLED"  # checked
+# }
 
 # # ============================================================
 # # MQ
 # # Policies check: engine_type (ActiveMQ), logs.audit
 # # ============================================================
 
-resource "aws_mq_broker" "example" {
-  broker_name         = "example-broker"
-  engine_type         = "ActiveMQ"        # checked: policy filters on ActiveMQ
-  engine_version      = "5.17.6"
-  host_instance_type  = "mq.m5.large"
-  publicly_accessible = false
+# resource "aws_mq_broker" "example" {
+#   broker_name         = "example-broker"
+#   engine_type         = "ActiveMQ"        # checked: policy filters on ActiveMQ
+#   engine_version      = "5.17.6"
+#   host_instance_type  = "mq.m5.large"
+#   publicly_accessible = false
 
-  user {
-    username = "admin"
-    password = "Admin1234!XyZ"
-  }
+#   user {
+#     username = "admin"
+#     password = "Admin1234!XyZ"
+#   }
 
-  logs {
-    audit = true                          # checked
+#   logs {
+#     audit = true                          # checked
+#   }
+# }
+
+
+
+
+# ============================================================
+# Glue
+# Policies check: command (list), glue_version, name
+# ============================================================
+
+resource "aws_glue_job" "example" {
+  name         = "example-glue-job"       # checked
+  role_arn     = "arn:aws:iam::123456789012:role/glue-role"
+  glue_version = "3.0"                    # checked: 3.0 or 4.0 supported
+  command {
+    name            = "glueetl"           # checked: command block required
+    script_location = "s3://my-bucket/scripts/example.py"
   }
 }
+
+
+
+# ============================================================
+# RDS
+# Policies check: engine, engine_version, storage_encrypted,
+#                 backup_retention_period, deletion_protection,
+#                 publicly_accessible, auto_minor_version_upgrade,
+#                 copy_tags_to_snapshot, monitoring_interval,
+#                 iam_database_authentication_enabled,
+#                 enabled_cloudwatch_logs_exports, master_username,
+#                 multi_az, port, parameter_group_name,
+#                 db_subnet_group_name, username (db_instance),
+#                 source_type + event_categories (event_subscription),
+#                 require_tls (proxy),
+#                 encrypted / storage_encrypted (snapshots),
+#                 shared_accounts (snapshots)
+# ============================================================
+
+resource "aws_db_instance" "example" {
+  identifier                          = "example-db"
+  engine                              = "mysql"       # checked
+  engine_version                      = "8.0"
+  instance_class                      = "db.t3.micro"
+  allocated_storage                   = 20
+  username                            = "dbadmin"     # checked: not "admin"
+  password                            = "Admin1234!"
+  storage_encrypted                   = true          # checked
+  backup_retention_period             = 7             # checked
+  deletion_protection                 = true          # checked
+  publicly_accessible                 = false         # checked
+  auto_minor_version_upgrade          = true          # checked
+  copy_tags_to_snapshot               = true          # checked
+  monitoring_interval                 = 60            # checked: > 0
+  monitoring_role_arn                 = "arn:aws:iam::123456789012:role/rds-monitoring-role"
+  iam_database_authentication_enabled = true          # checked
+  multi_az                            = true          # checked
+  db_subnet_group_name                = "example-subnet-group"  # checked
+  enabled_cloudwatch_logs_exports     = ["audit", "error", "general", "slowquery"]  # checked: mysql requires audit,error,general,slowquery
+  port                                = 3307          # checked: not default 3306
+  skip_final_snapshot                 = true
+}
+
+resource "aws_rds_cluster_parameter_group" "example" {
+  name        = "example-aurora-mysql-pg"
+  family      = "aurora-mysql8.0"
+  description = "Aurora MySQL parameter group with audit logging"
+
+  parameter {
+    name  = "server_audit_logging"
+    value = "1"                         # checked: enables audit logging
+  }
+
+  parameter {
+    name  = "server_audit_events"
+    value = "CONNECT,QUERY,QUERY_DCL,QUERY_DDL,QUERY_DML"  # checked: non-empty
+  }
+}
+
+resource "aws_rds_cluster" "example" {
+  cluster_identifier                  = "example-cluster"
+  engine                              = "aurora-mysql"  # checked
+  engine_version                      = "8.0.mysql_aurora.3.04.0"
+  master_username                     = "clusteradmin"  # checked: not "admin"/"awsuser"
+  master_password                     = "Admin1234!"
+  storage_encrypted                   = true            # checked
+  backup_retention_period             = 7               # checked
+  deletion_protection                 = true            # checked
+  copy_tags_to_snapshot               = true            # checked
+  iam_database_authentication_enabled = true            # checked
+  auto_minor_version_upgrade          = true            # checked
+  enabled_cloudwatch_logs_exports     = ["audit", "error"]  # checked
+  availability_zones                  = ["us-east-1a", "us-east-1b", "us-east-1c"]  # checked: multi-AZ
+  port                                = 3307            # checked: not default
+  backtrack_window                    = 72              # checked: aurora-mysql backtracking
+  db_cluster_parameter_group_name     = aws_rds_cluster_parameter_group.example.name  # checked: required for audit logging policy
+  skip_final_snapshot                 = true
+}
+
+resource "aws_rds_cluster_instance" "example" {
+  identifier                 = "example-cluster-instance"
+  cluster_identifier         = aws_rds_cluster.example.id
+  instance_class             = "db.t3.medium"
+  engine                     = aws_rds_cluster.example.engine
+  engine_version             = aws_rds_cluster.example.engine_version
+  auto_minor_version_upgrade = true   # checked
+  publicly_accessible        = false
+  monitoring_interval        = 60
+  monitoring_role_arn        = "arn:aws:iam::123456789012:role/rds-monitoring-role"
+}
+
+resource "aws_db_snapshot" "example" {
+  db_instance_identifier = aws_db_instance.example.id
+  db_snapshot_identifier = "example-snapshot"
+  # encrypted = true inherited from encrypted db instance (checked)
+}
+
+resource "aws_db_cluster_snapshot" "example" {
+  db_cluster_identifier          = aws_rds_cluster.example.id
+  db_cluster_snapshot_identifier = "example-cluster-snapshot"
+  # storage_encrypted inherited from encrypted cluster (checked)
+}
+
+resource "aws_db_event_subscription" "instance" {
+  name        = "example-instance-events"
+  sns_topic   = "arn:aws:sns:us-east-1:123456789012:example-topic"
+  source_type = "db-instance"             # checked
+  enabled     = true                      # checked
+  event_categories = [                    # checked
+    "availability", "deletion", "failure", "maintenance", "configuration change"
+  ]
+}
+
+resource "aws_db_event_subscription" "cluster" {
+  name        = "example-cluster-events"
+  sns_topic   = "arn:aws:sns:us-east-1:123456789012:example-topic"
+  source_type = "db-cluster"              # checked
+  enabled     = true
+  event_categories = ["failure", "maintenance"]  # checked
+}
+
+resource "aws_db_event_subscription" "parameter_group" {
+  name        = "example-pg-events"
+  sns_topic   = "arn:aws:sns:us-east-1:123456789012:example-topic"
+  source_type = "db-parameter-group"      # checked
+  enabled     = true
+  event_categories = ["configuration change"]  # checked
+}
+
+resource "aws_db_event_subscription" "security_group" {
+  name        = "example-sg-events"
+  sns_topic   = "arn:aws:sns:us-east-1:123456789012:example-topic"
+  source_type = "db-security-group"       # checked
+  enabled     = true
+  event_categories = ["failure", "configuration change"]  # checked
+}
+
+resource "aws_db_proxy" "example" {
+  name               = "example-proxy"
+  debug_logging      = false
+  engine_family      = "MYSQL"
+  idle_client_timeout = 1800
+  require_tls        = true              # checked
+  role_arn           = "arn:aws:iam::123456789012:role/rds-proxy-role"
+  vpc_subnet_ids     = ["subnet-12345678", "subnet-87654321"]
+
+  auth {
+    auth_scheme = "SECRETS"
+    iam_auth    = "DISABLED"
+    secret_arn  = "arn:aws:secretsmanager:us-east-1:123456789012:secret:example"
+  }
+}
+
+resource "aws_cloudwatch_log_group" "example" {
+  name              = "/aws/example"      # checked: name required by ssm policy
+  retention_in_days = 90
+}
+
+
+
+# ============================================================
+# Redshift
+# Policies check: automated_snapshot_retention_period,
+#                 encrypted, kms_key_id, allow_version_upgrade,
+#                 preferred_maintenance_window, publicly_accessible,
+#                 master_username (not "awsuser"),
+#                 enhanced_vpc_routing, cluster_parameter_group_name,
+#                 port, vpc_security_group_ids,
+#                 (logging) log_destination_type, log_exports,
+#                 (serverless ns) admin_username, log_exports,
+#                 (serverless wg) publicly_accessible,
+#                 enhanced_vpc_routing, config_parameter
+# ============================================================
+
+resource "aws_redshift_parameter_group" "example" {
+  name   = "example-redshift-pg"
+  family = "redshift-1.0"
+
+  parameter {
+    name  = "require_ssl"
+    value = "true"                      # checked: TLS required
+  }
+}
+
+resource "aws_redshift_cluster" "example" {
+  cluster_identifier                  = "example-cluster"
+  database_name                       = "exampledb"
+  master_username                     = "exampleadmin"  # checked: not "awsuser"
+  master_password                     = "Admin1234!"
+  node_type                           = "dc2.large"
+  cluster_type                        = "single-node"
+  encrypted                           = true           # checked
+  kms_key_id                          = "arn:aws:kms:us-east-1:123456789012:key/example"  # checked
+  publicly_accessible                 = false          # checked
+  enhanced_vpc_routing                = true           # checked
+  automated_snapshot_retention_period = 7              # checked
+  allow_version_upgrade               = true           # checked
+  preferred_maintenance_window        = "sun:05:00-sun:06:00"  # checked
+  port                                = 5440           # checked: not default 5439
+  cluster_parameter_group_name        = aws_redshift_parameter_group.example.name  # checked: require_ssl policy
+  skip_final_snapshot                 = true
+}
+
+resource "aws_redshift_logging" "example" {
+  cluster_identifier   = aws_redshift_cluster.example.id
+  log_destination_type = "cloudwatch"    # checked
+  log_exports          = ["connectionlog", "userlog", "useractivitylog"]  # checked
+}
+
+resource "aws_redshiftserverless_namespace" "example" {
+  namespace_name      = "example-namespace"
+  admin_username      = "exampleadmin"   # checked: not "admin"
+  admin_user_password = "Admin1234!"
+  log_exports         = ["userlog", "connectionlog", "useractivitylog"]  # checked
+}
+
+resource "aws_redshiftserverless_workgroup" "example" {
+  namespace_name       = aws_redshiftserverless_namespace.example.namespace_name
+  workgroup_name       = "example-workgroup"
+  publicly_accessible  = false           # checked
+  enhanced_vpc_routing = true            # checked
+  subnet_ids           = ["subnet-12345678", "subnet-87654321"]
+
+  config_parameter {                     # checked: require_ssl
+    parameter_key   = "require_ssl"
+    parameter_value = "true"
+  }
+}
+
+
