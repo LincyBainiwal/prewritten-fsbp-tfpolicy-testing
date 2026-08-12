@@ -23,7 +23,7 @@ resource_policy "aws_redshift_cluster" "unrestricted-port-access" {
         cluster_sgs = core::try(attrs.vpc_security_group_ids, [])
         
         # Flatten all ingress rules from all security groups into a single list
-        all_ingress_rules = core::length(local.cluster_sgs) > 0 ? core::flatten([
+        redshift_all_ingress_rules = core::length(local.cluster_sgs) > 0 ? core::flatten([
             for sg_id in local.cluster_sgs : core::getresources("aws_vpc_security_group_ingress_rule", {
                 security_group_id = sg_id
             })
@@ -32,8 +32,8 @@ resource_policy "aws_redshift_cluster" "unrestricted-port-access" {
         redshift_port = core::try(attrs.port, 5439)
         
         # Check if any rule allows unrestricted access to the Redshift port
-        has_unrestricted_access = core::length(local.all_ingress_rules) > 0 ? core::contains([
-            for sg_id in local.all_ingress_rules : (
+        has_unrestricted_access = core::length(local.redshift_all_ingress_rules) > 0 ? core::contains([
+            for sg_id in local.redshift_all_ingress_rules : (
                 # check if port is a redshift port
                 ((core::try(sg_id.ip_protocol, "-1") != "-1") ? (core::try(sg_id.from_port, 1115) <= local.redshift_port && core::try(sg_id.to_port, 65535) >= local.redshift_port) : true)
                 &&
