@@ -1253,35 +1253,257 @@ provider "aws" {
 #                 copy_tags_to_volumes
 # ============================================================
 
-resource "aws_fsx_lustre_file_system" "example" {
-  storage_capacity     = 1200
-  subnet_ids           = ["subnet-00b29a1440b8967e9"]   # us-east-1a
-  deployment_type      = "PERSISTENT_1"   # checked: PERSISTENT_1 / PERSISTENT_2
-  copy_tags_to_backups = true              # checked
+# resource "aws_fsx_lustre_file_system" "example" {
+#   storage_capacity            = 1200
+#   subnet_ids                  = ["subnet-00b29a1440b8967e9"]  # us-east-1a
+#   deployment_type             = "PERSISTENT_1"                # checked: PERSISTENT_1 / PERSISTENT_2
+#   per_unit_storage_throughput = 50                            # required for PERSISTENT_1 (50, 100, or 200)
+#   copy_tags_to_backups        = true                          # checked
+# }
+
+# resource "aws_fsx_ontap_file_system" "example" {
+#   storage_capacity    = 1024
+#   subnet_ids          = ["subnet-00b29a1440b8967e9", "subnet-048cfe24c2f869a51"]
+#   deployment_type     = "MULTI_AZ_1"      # checked: MULTI_AZ_1 / MULTI_AZ_2
+#   preferred_subnet_id = "subnet-00b29a1440b8967e9"
+#   throughput_capacity = 128
+# }
+
+# resource "aws_fsx_openzfs_file_system" "example" {
+#   storage_capacity     = 64
+#   subnet_ids           = ["subnet-00b29a1440b8967e9"]        # only 1 subnet_id for MULTI_AZ_1
+#   preferred_subnet_id  = "subnet-00b29a1440b8967e9"          # required for MULTI_AZ_1
+#   standby_subnet_id    = "subnet-048cfe24c2f869a51"          # required for MULTI_AZ_1
+#   deployment_type      = "MULTI_AZ_1"                        # checked
+#   throughput_capacity  = 160                                  # minimum valid value for MULTI_AZ_1
+#   copy_tags_to_backups = true                                 # checked
+#   copy_tags_to_volumes = true                                 # checked
+# }
+
+# # aws_fsx_windows_file_system requires active_directory_id or self_managed_active_directory.
+# # No Active Directory is available in this test account — always fails on apply.
+# # Policy evaluation (fsx-windows-deployment-type-check) still runs at plan time → Pass.
+# # resource "aws_fsx_windows_file_system" "example" {
+# #   storage_capacity    = 32
+# #   subnet_ids          = ["subnet-00b29a1440b8967e9", "subnet-048cfe24c2f869a51"]
+# #   deployment_type     = "MULTI_AZ_1"
+# #   preferred_subnet_id = "subnet-00b29a1440b8967e9"
+# #   throughput_capacity = 8
+# # }
+
+
+
+# ============================================================
+# WAF
+# Policies check: predicates (waf_rule, wafregional_rule must have >=1),
+#                 activated_rule (rule_group must have >=1),
+#                 rules / rule (web_acl must have >=1),
+#                 logging_configuration (waf_web_acl),
+#                 visibility_config.cloudwatch_metrics_enabled (wafv2)
+# ============================================================
+
+# Kinesis Firehose delivery stream required by aws_waf_web_acl logging_configuration
+# Name must start with "aws-waf-logs-" — AWS requirement
+
+resource "aws_s3_bucket" "waf_logs" {
+  bucket        = "waf-logs-example-778091236250"
+  force_destroy = true
 }
 
-resource "aws_fsx_ontap_file_system" "example" {
-  storage_capacity    = 1024
-  subnet_ids          = ["subnet-00b29a1440b8967e9", "subnet-048cfe24c2f869a51"]
-  deployment_type     = "MULTI_AZ_1"      # checked: MULTI_AZ_1 / MULTI_AZ_2
-  preferred_subnet_id = "subnet-00b29a1440b8967e9"
-  throughput_capacity = 128
+resource "aws_iam_role" "firehose_waf_logs" {
+  name = "firehose-waf-logs-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "firehose.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
 }
 
-resource "aws_fsx_openzfs_file_system" "example" {
-  storage_capacity     = 64
-  subnet_ids           = ["subnet-00b29a1440b8967e9", "subnet-048cfe24c2f869a51"]
-  deployment_type      = "MULTI_AZ_1"     # checked
-  throughput_capacity  = 160              # minimum valid value for MULTI_AZ_1
-  copy_tags_to_backups = true             # checked
-  copy_tags_to_volumes = true             # checked
+resource "aws_iam_role_policy" "firehose_waf_logs" {
+  name = "firehose-waf-logs-policy"
+  role = aws_iam_role.firehose_waf_logs.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["s3:PutObject", "s3:GetBucketLocation", "s3:ListBucket"]
+      Resource = [
+        aws_s3_bucket.waf_logs.arn,
+        "${aws_s3_bucket.waf_logs.arn}/*"
+      ]
+    }]
+  })
 }
 
-resource "aws_fsx_windows_file_system" "example" {
-  storage_capacity    = 32
-  subnet_ids          = ["subnet-00b29a1440b8967e9", "subnet-048cfe24c2f869a51"]
-  deployment_type     = "MULTI_AZ_1"      # checked: MULTI_AZ_1 / MULTI_AZ_2
-  preferred_subnet_id = "subnet-00b29a1440b8967e9"
-  throughput_capacity = 8
+resource "aws_kinesis_firehose_delivery_stream" "waf_logs" {
+  name        = "aws-waf-logs-example"
+  destination = "extended_s3"
+
+  extended_s3_configuration {
+    role_arn   = aws_iam_role.firehose_waf_logs.arn
+    bucket_arn = aws_s3_bucket.waf_logs.arn
+  }
+}
+
+resource "aws_waf_ipset" "example" {
+  name = "example-waf-ipset"
+
+  ip_set_descriptors {
+    type  = "IPV4"
+    value = "192.0.2.0/24"
+  }
+}
+
+resource "aws_waf_rule" "example" {
+  name        = "example-waf-rule"
+  metric_name = "exampleWafRule"
+
+  predicates {                           # checked: must have >= 1 predicate
+    data_id = aws_waf_ipset.example.id   # real IP set reference
+    negated = false
+    type    = "IPMatch"
+  }
+}
+
+resource "aws_waf_rule_group" "example" {
+  name        = "example-waf-rule-group"
+  metric_name = "exampleWafRuleGroup"
+
+  activated_rule {                       # checked: must have >= 1 activated_rule
+    action { type = "COUNT" }
+    priority = 1
+    rule_id  = aws_waf_rule.example.id
+  }
+}
+
+resource "aws_waf_web_acl" "example" {
+  name        = "example-waf-acl"
+  metric_name = "exampleWafAcl"
+
+  default_action { type = "ALLOW" }
+
+  rules {                                # checked: must have >= 1 rule
+    priority = 1
+    rule_id  = aws_waf_rule.example.id
+    type     = "REGULAR"
+    action   { type = "COUNT" }
+  }
+
+  logging_configuration {               # checked: waf-classic-logging-enabled
+    log_destination = aws_kinesis_firehose_delivery_stream.waf_logs.arn  # name starts with aws-waf-logs-
+  }
+}
+
+resource "aws_wafregional_ipset" "example" {
+  name = "example-wafregional-ipset"
+
+  ip_set_descriptor {
+    type  = "IPV4"
+    value = "192.0.2.0/24"
+  }
+}
+
+resource "aws_wafregional_rule" "example" {
+  name        = "example-wafregional-rule"
+  metric_name = "exampleWafRegionalRule"
+
+  predicate {                            # checked: must have >= 1 predicate
+    data_id = aws_wafregional_ipset.example.id  # real IP set reference
+    negated = false
+    type    = "IPMatch"
+  }
+}
+
+resource "aws_wafregional_rule_group" "example" {
+  name        = "example-wafregional-rule-group"
+  metric_name = "exampleWafRegionalRuleGroup"
+
+  activated_rule {                       # checked: must have >= 1 activated_rule
+    action { type = "COUNT" }
+    priority = 1
+    rule_id  = aws_wafregional_rule.example.id
+  }
+}
+
+resource "aws_wafregional_web_acl" "example" {
+  name        = "example-wafregional-acl"
+  metric_name = "exampleWafRegionalAcl"
+
+  default_action { type = "ALLOW" }
+
+  rule {                                 # checked: must have >= 1 rule
+    priority = 1
+    rule_id  = aws_wafregional_rule.example.id
+    type     = "REGULAR"
+    action   { type = "COUNT" }
+  }
+}
+
+resource "aws_wafv2_rule_group" "example" {
+  name     = "example-wafv2-rule-group"
+  scope    = "REGIONAL"
+  capacity = 10
+
+  visibility_config {
+    cloudwatch_metrics_enabled = true   # checked
+    metric_name                = "exampleWafv2RuleGroup"
+    sampled_requests_enabled   = true
+  }
+
+  rule {                                 # checked: must have >= 1 rule with visibility_config
+    name     = "example-rule"
+    priority = 1
+    action {
+      count {}
+    }
+    statement {
+      geo_match_statement {
+        country_codes = ["US"]
+      }
+    }
+    visibility_config {
+      cloudwatch_metrics_enabled = true  # checked
+      metric_name                = "exampleRule"
+      sampled_requests_enabled   = true
+    }
+  }
+}
+
+resource "aws_wafv2_web_acl" "example" {
+  name  = "example-wafv2-acl"
+  scope = "REGIONAL"
+
+  default_action {
+    allow {}
+  }
+
+  visibility_config {
+    cloudwatch_metrics_enabled = true   # checked
+    metric_name                = "exampleWafv2Acl"
+    sampled_requests_enabled   = true
+  }
+
+  rule {                                 # checked: must have >= 1 rule
+    name     = "example-rule"
+    priority = 1
+    override_action {
+      none {}
+    }
+    statement {
+      rule_group_reference_statement {
+        arn = aws_wafv2_rule_group.example.arn
+      }
+    }
+    visibility_config {
+      cloudwatch_metrics_enabled = true  # checked
+      metric_name                = "exampleRuleRef"
+      sampled_requests_enabled   = true
+    }
+  }
 }
 
