@@ -1,0 +1,38 @@
+# Copyright IBM Corp. 2026
+
+policytest {
+  targets = [
+    "macie-auto-sensitive-data-discovery-check.policy.hcl"
+  ]
+}
+
+# Test 1: PASS - Macie enabled with finding_publishing_frequency configured
+resource "aws_macie2_account" "pass_macie_enabled_with_frequency" {
+  attrs = {
+    status                       = "ENABLED"
+    finding_publishing_frequency = "FIFTEEN_MINUTES"
+  }
+}
+
+# Test 2: PASS - Macie enabled without finding_publishing_frequency (not required for Macie.2)
+resource "aws_macie2_account" "pass_macie_enabled_no_frequency" {
+  attrs = {
+    status = "ENABLED"
+  }
+}
+
+# Test 3: FAIL - Macie status is PAUSED
+resource "aws_macie2_account" "fail_macie_paused" {
+  expect_failure = true
+  attrs = {
+    status                       = "PAUSED"
+    finding_publishing_frequency = "ONE_HOUR"
+  }
+}
+
+# Test 4: FILTERED - No status attribute (filtered out by policy)
+resource "aws_macie2_account" "filtered_no_status" {
+  attrs = {
+    finding_publishing_frequency = "SIX_HOURS"
+  }
+}
