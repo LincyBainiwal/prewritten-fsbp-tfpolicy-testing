@@ -1008,7 +1008,7 @@ provider "aws" {
 # ============================================================
 
 resource "aws_secretsmanager_secret" "example" {
-  name = "example-secret"                # checked
+  name = "example-secret-2"              # checked
 
   tags = {
     LastAccessed = "2025-01-01"          # checked: required by secretsmanager-secret-unused policy
