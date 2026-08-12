@@ -1144,102 +1144,144 @@ provider "aws" {
 #                 additional_configuration
 # ============================================================
 
-resource "aws_guardduty_detector" "example" {
-  enable = true                            # checked: guardduty-enabled-centralized
+# resource "aws_guardduty_detector" "example" {
+#   enable = true                            # checked: guardduty-enabled-centralized
+# }
+
+# # RUNTIME_MONITORING — covers ec2, ecs, eks, and general runtime policies
+# # all 3 additional_configuration blocks needed to satisfy all runtime policies
+# resource "aws_guardduty_detector_feature" "runtime_monitoring" {
+#   detector_id = aws_guardduty_detector.example.id
+#   name        = "RUNTIME_MONITORING"
+#   status      = "ENABLED"                 # checked
+
+#   additional_configuration {
+#     name   = "EKS_ADDON_MANAGEMENT"       # checked: guardduty-eks-protection-runtime-enabled, guardduty-runtime-monitoring-enabled
+#     status = "ENABLED"
+#   }
+#   additional_configuration {
+#     name   = "EC2_AGENT_MANAGEMENT"       # checked: guardduty-ec2-protection-runtime-enabled, guardduty-runtime-monitoring-enabled
+#     status = "ENABLED"
+#   }
+#   additional_configuration {
+#     name   = "ECS_FARGATE_AGENT_MANAGEMENT"  # checked: guardduty-ecs-protection-runtime-enabled, guardduty-runtime-monitoring-enabled
+#     status = "ENABLED"
+#   }
+# }
+
+# # S3_DATA_EVENTS — guardduty-s3-protection-enabled
+# resource "aws_guardduty_detector_feature" "s3_data_events" {
+#   detector_id = aws_guardduty_detector.example.id
+#   name        = "S3_DATA_EVENTS"
+#   status      = "ENABLED"                 # checked
+# }
+
+# # EKS_AUDIT_LOGS — guardduty-eks-protection-audit-enabled
+# resource "aws_guardduty_detector_feature" "eks_audit_logs" {
+#   detector_id = aws_guardduty_detector.example.id
+#   name        = "EKS_AUDIT_LOGS"
+#   status      = "ENABLED"                 # checked
+# }
+
+# # EKS_RUNTIME_MONITORING — guardduty-eks-protection-runtime-enabled
+# resource "aws_guardduty_detector_feature" "eks_runtime_monitoring" {
+#   detector_id = aws_guardduty_detector.example.id
+#   name        = "EKS_RUNTIME_MONITORING"
+#   status      = "ENABLED"                 # checked
+
+#   additional_configuration {
+#     name   = "EKS_ADDON_MANAGEMENT"       # checked
+#     status = "ENABLED"
+#   }
+# }
+
+# # RDS_LOGIN_EVENTS — guardduty-rds-protection-enabled
+# resource "aws_guardduty_detector_feature" "rds_login_events" {
+#   detector_id = aws_guardduty_detector.example.id
+#   name        = "RDS_LOGIN_EVENTS"
+#   status      = "ENABLED"                 # checked
+# }
+
+# # EBS_MALWARE_PROTECTION — guardduty-malware-protection-enabled
+# resource "aws_guardduty_detector_feature" "ebs_malware_protection" {
+#   detector_id = aws_guardduty_detector.example.id
+#   name        = "EBS_MALWARE_PROTECTION"
+#   status      = "ENABLED"                 # checked
+# }
+
+# # LAMBDA_NETWORK_LOGS — guardduty-lambda-protection-enabled
+# resource "aws_guardduty_detector_feature" "lambda_network_logs" {
+#   detector_id = aws_guardduty_detector.example.id
+#   name        = "LAMBDA_NETWORK_LOGS"
+#   status      = "ENABLED"                 # checked
+# }
+
+# # Organization configuration features
+# # S3_DATA_EVENTS org — guardduty-s3-protection-enabled
+# resource "aws_guardduty_organization_configuration_feature" "s3_data_events" {
+#   detector_id = aws_guardduty_detector.example.id
+#   name        = "S3_DATA_EVENTS"
+#   auto_enable = "ALL"                     # checked
+# }
+
+# # RUNTIME_MONITORING org — covers ec2, ecs, eks, and general runtime org policies
+# resource "aws_guardduty_organization_configuration_feature" "runtime_monitoring" {
+#   detector_id = aws_guardduty_detector.example.id
+#   name        = "RUNTIME_MONITORING"
+#   auto_enable = "ALL"                     # checked
+
+#   additional_configuration {
+#     name        = "EKS_ADDON_MANAGEMENT"
+#     auto_enable = "ALL"
+#   }
+#   additional_configuration {
+#     name        = "EC2_AGENT_MANAGEMENT"
+#     auto_enable = "ALL"
+#   }
+#   additional_configuration {
+#     name        = "ECS_FARGATE_AGENT_MANAGEMENT"
+#     auto_enable = "ALL"
+#   }
+# }.   
+
+
+
+
+# ============================================================
+# FSx
+# Policies check: deployment_type, copy_tags_to_backups,
+#                 copy_tags_to_volumes
+# ============================================================
+
+resource "aws_fsx_lustre_file_system" "example" {
+  storage_capacity     = 1200
+  subnet_ids           = ["subnet-00b29a1440b8967e9"]   # us-east-1a
+  deployment_type      = "PERSISTENT_1"   # checked: PERSISTENT_1 / PERSISTENT_2
+  copy_tags_to_backups = true              # checked
 }
 
-# RUNTIME_MONITORING — covers ec2, ecs, eks, and general runtime policies
-# all 3 additional_configuration blocks needed to satisfy all runtime policies
-resource "aws_guardduty_detector_feature" "runtime_monitoring" {
-  detector_id = aws_guardduty_detector.example.id
-  name        = "RUNTIME_MONITORING"
-  status      = "ENABLED"                 # checked
-
-  additional_configuration {
-    name   = "EKS_ADDON_MANAGEMENT"       # checked: guardduty-eks-protection-runtime-enabled, guardduty-runtime-monitoring-enabled
-    status = "ENABLED"
-  }
-  additional_configuration {
-    name   = "EC2_AGENT_MANAGEMENT"       # checked: guardduty-ec2-protection-runtime-enabled, guardduty-runtime-monitoring-enabled
-    status = "ENABLED"
-  }
-  additional_configuration {
-    name   = "ECS_FARGATE_AGENT_MANAGEMENT"  # checked: guardduty-ecs-protection-runtime-enabled, guardduty-runtime-monitoring-enabled
-    status = "ENABLED"
-  }
+resource "aws_fsx_ontap_file_system" "example" {
+  storage_capacity    = 1024
+  subnet_ids          = ["subnet-00b29a1440b8967e9", "subnet-048cfe24c2f869a51"]
+  deployment_type     = "MULTI_AZ_1"      # checked: MULTI_AZ_1 / MULTI_AZ_2
+  preferred_subnet_id = "subnet-00b29a1440b8967e9"
+  throughput_capacity = 128
 }
 
-# S3_DATA_EVENTS — guardduty-s3-protection-enabled
-resource "aws_guardduty_detector_feature" "s3_data_events" {
-  detector_id = aws_guardduty_detector.example.id
-  name        = "S3_DATA_EVENTS"
-  status      = "ENABLED"                 # checked
+resource "aws_fsx_openzfs_file_system" "example" {
+  storage_capacity     = 64
+  subnet_ids           = ["subnet-00b29a1440b8967e9", "subnet-048cfe24c2f869a51"]
+  deployment_type      = "MULTI_AZ_1"     # checked
+  throughput_capacity  = 64
+  copy_tags_to_backups = true             # checked
+  copy_tags_to_volumes = true             # checked
 }
 
-# EKS_AUDIT_LOGS — guardduty-eks-protection-audit-enabled
-resource "aws_guardduty_detector_feature" "eks_audit_logs" {
-  detector_id = aws_guardduty_detector.example.id
-  name        = "EKS_AUDIT_LOGS"
-  status      = "ENABLED"                 # checked
+resource "aws_fsx_windows_file_system" "example" {
+  storage_capacity    = 32
+  subnet_ids          = ["subnet-00b29a1440b8967e9", "subnet-048cfe24c2f869a51"]
+  deployment_type     = "MULTI_AZ_1"      # checked: MULTI_AZ_1 / MULTI_AZ_2
+  preferred_subnet_id = "subnet-00b29a1440b8967e9"
+  throughput_capacity = 8
 }
 
-# EKS_RUNTIME_MONITORING — guardduty-eks-protection-runtime-enabled
-resource "aws_guardduty_detector_feature" "eks_runtime_monitoring" {
-  detector_id = aws_guardduty_detector.example.id
-  name        = "EKS_RUNTIME_MONITORING"
-  status      = "ENABLED"                 # checked
-
-  additional_configuration {
-    name   = "EKS_ADDON_MANAGEMENT"       # checked
-    status = "ENABLED"
-  }
-}
-
-# RDS_LOGIN_EVENTS — guardduty-rds-protection-enabled
-resource "aws_guardduty_detector_feature" "rds_login_events" {
-  detector_id = aws_guardduty_detector.example.id
-  name        = "RDS_LOGIN_EVENTS"
-  status      = "ENABLED"                 # checked
-}
-
-# EBS_MALWARE_PROTECTION — guardduty-malware-protection-enabled
-resource "aws_guardduty_detector_feature" "ebs_malware_protection" {
-  detector_id = aws_guardduty_detector.example.id
-  name        = "EBS_MALWARE_PROTECTION"
-  status      = "ENABLED"                 # checked
-}
-
-# LAMBDA_NETWORK_LOGS — guardduty-lambda-protection-enabled
-resource "aws_guardduty_detector_feature" "lambda_network_logs" {
-  detector_id = aws_guardduty_detector.example.id
-  name        = "LAMBDA_NETWORK_LOGS"
-  status      = "ENABLED"                 # checked
-}
-
-# Organization configuration features
-# S3_DATA_EVENTS org — guardduty-s3-protection-enabled
-resource "aws_guardduty_organization_configuration_feature" "s3_data_events" {
-  detector_id = aws_guardduty_detector.example.id
-  name        = "S3_DATA_EVENTS"
-  auto_enable = "ALL"                     # checked
-}
-
-# RUNTIME_MONITORING org — covers ec2, ecs, eks, and general runtime org policies
-resource "aws_guardduty_organization_configuration_feature" "runtime_monitoring" {
-  detector_id = aws_guardduty_detector.example.id
-  name        = "RUNTIME_MONITORING"
-  auto_enable = "ALL"                     # checked
-
-  additional_configuration {
-    name        = "EKS_ADDON_MANAGEMENT"
-    auto_enable = "ALL"
-  }
-  additional_configuration {
-    name        = "EC2_AGENT_MANAGEMENT"
-    auto_enable = "ALL"
-  }
-  additional_configuration {
-    name        = "ECS_FARGATE_AGENT_MANAGEMENT"
-    auto_enable = "ALL"
-  }
-}
