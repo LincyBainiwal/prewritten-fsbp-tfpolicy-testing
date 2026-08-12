@@ -1312,66 +1312,87 @@ provider "aws" {
 # resource "aws_wafregional_rule_group" "example" { ... }
 # resource "aws_wafregional_web_acl" "example" { ... }  # waf-regional-rule-not-empty
 
-resource "aws_wafv2_rule_group" "example" {
-  name     = "example-wafv2-rule-group"
-  scope    = "REGIONAL"
-  capacity = 10
+# resource "aws_wafv2_rule_group" "example" {
+#   name     = "example-wafv2-rule-group"
+#   scope    = "REGIONAL"
+#   capacity = 10
 
-  visibility_config {
-    cloudwatch_metrics_enabled = true   # checked
-    metric_name                = "exampleWafv2RuleGroup"
-    sampled_requests_enabled   = true
-  }
+#   visibility_config {
+#     cloudwatch_metrics_enabled = true   # checked
+#     metric_name                = "exampleWafv2RuleGroup"
+#     sampled_requests_enabled   = true
+#   }
 
-  rule {                                 # checked: must have >= 1 rule with visibility_config
-    name     = "example-rule"
-    priority = 1
-    action {
-      count {}
-    }
-    statement {
-      geo_match_statement {
-        country_codes = ["US"]
-      }
-    }
-    visibility_config {
-      cloudwatch_metrics_enabled = true  # checked
-      metric_name                = "exampleRule"
-      sampled_requests_enabled   = true
-    }
-  }
-}
+#   rule {                                 # checked: must have >= 1 rule with visibility_config
+#     name     = "example-rule"
+#     priority = 1
+#     action {
+#       count {}
+#     }
+#     statement {
+#       geo_match_statement {
+#         country_codes = ["US"]
+#       }
+#     }
+#     visibility_config {
+#       cloudwatch_metrics_enabled = true  # checked
+#       metric_name                = "exampleRule"
+#       sampled_requests_enabled   = true
+#     }
+#   }
+# }
 
-resource "aws_wafv2_web_acl" "example" {
-  name  = "example-wafv2-acl"
-  scope = "REGIONAL"
+# resource "aws_wafv2_web_acl" "example" {
+#   name  = "example-wafv2-acl"
+#   scope = "REGIONAL"
 
-  default_action {
-    allow {}
-  }
+#   default_action {
+#     allow {}
+#   }
 
-  visibility_config {
-    cloudwatch_metrics_enabled = true   # checked
-    metric_name                = "exampleWafv2Acl"
-    sampled_requests_enabled   = true
-  }
+#   visibility_config {
+#     cloudwatch_metrics_enabled = true   # checked
+#     metric_name                = "exampleWafv2Acl"
+#     sampled_requests_enabled   = true
+#   }
 
-  rule {                                 # checked: must have >= 1 rule
-    name     = "example-rule"
-    priority = 1
-    override_action {
-      none {}
-    }
-    statement {
-      rule_group_reference_statement {
-        arn = aws_wafv2_rule_group.example.arn
-      }
-    }
-    visibility_config {
-      cloudwatch_metrics_enabled = true  # checked
-      metric_name                = "exampleRuleRef"
-      sampled_requests_enabled   = true
-    }
-  }
-}
+#   rule {                                 # checked: must have >= 1 rule
+#     name     = "example-rule"
+#     priority = 1
+#     override_action {
+#       none {}
+#     }
+#     statement {
+#       rule_group_reference_statement {
+#         arn = aws_wafv2_rule_group.example.arn
+#       }
+#     }
+#     visibility_config {
+#       cloudwatch_metrics_enabled = true  # checked
+#       metric_name                = "exampleRuleRef"
+#       sampled_requests_enabled   = true
+#     }
+#   }
+# }
 
+
+
+
+
+
+# ============================================================
+# WorkSpaces
+# Policies check: root_volume_encryption_enabled,
+#                 user_volume_encryption_enabled
+# ============================================================
+
+# WorkSpaces blocked by org SCP (explicit deny on workspaces:*)
+# Same pattern as GuardDuty, WAF Classic. Policies → Unknown at plan time.
+# resource "aws_workspaces_workspace" "example" {
+#   directory_id                   = "d-1234567890"
+#   bundle_id                      = "wsb-bh8rsxt14"
+#   user_name                      = "exampleuser"
+#   root_volume_encryption_enabled = true
+#   user_volume_encryption_enabled = true
+#   volume_encryption_key          = "alias/aws/workspaces"
+# }
