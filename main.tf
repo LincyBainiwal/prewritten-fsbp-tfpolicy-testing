@@ -1492,38 +1492,131 @@ resource "aws_iam_role_policy_attachment" "sagemaker_full" {
 #   security_groups        = ["sg-12345678"]
 # }
 
-resource "aws_sagemaker_model" "example" {
-  name               = "example-model"
-  execution_role_arn = aws_iam_role.sagemaker.arn  # real role reference
+# resource "aws_sagemaker_model" "example" {
+#   name               = "example-model"
+#   execution_role_arn = aws_iam_role.sagemaker.arn  # real role reference
 
-  enable_network_isolation = true            # checked
+#   enable_network_isolation = true            # checked
 
-  primary_container {
-    # AWS built-in XGBoost image (public AWS-managed ECR) — no ECR push needed
-    # repository_access_mode = "Platform" required for AWS built-in images
-    # sagemaker-model-private-registry-required → Advisory (not Fail, enforcement=advisory)
-    image = "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-xgboost:1.7-1"
+#   primary_container {
+#     # AWS built-in XGBoost image (public AWS-managed ECR) — no ECR push needed
+#     # repository_access_mode = "Platform" required for AWS built-in images
+#     # sagemaker-model-private-registry-required → Advisory (not Fail, enforcement=advisory)
+#     image = "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-xgboost:1.7-1"
 
-    image_config {
-      repository_access_mode = "Platform"
-    }
-  }
-}
+#     image_config {
+#       repository_access_mode = "Platform"
+#     }
+#   }
+# }
 
-resource "aws_sagemaker_endpoint_configuration" "example" {
-  name = "example-endpoint-config"
+# resource "aws_sagemaker_endpoint_configuration" "example" {
+#   name = "example-endpoint-config"
 
-  production_variants {                      # checked
-    variant_name           = "primary"
-    model_name             = aws_sagemaker_model.example.name
-    initial_instance_count = 2              # checked: >= 2 for prod
-    instance_type          = "ml.t2.medium"
-  }
-}
+#   production_variants {                      # checked
+#     variant_name           = "primary"
+#     model_name             = aws_sagemaker_model.example.name
+#     initial_instance_count = 2              # checked: >= 2 for prod
+#     instance_type          = "ml.t2.medium"
+#   }
+# }
 
 # CreateDataQualityJobDefinition is in maintenance mode — not available to new customers
 # CreateMonitoringSchedule depends on it → both commented out
 # Policies tested at plan time → Pass
 # resource "aws_sagemaker_data_quality_job_definition" "example" { ... }
 # resource "aws_sagemaker_monitoring_schedule" "example" { ... }
+
+
+
+
+# ============================================================
+# MSK
+# Policies check: broker_node_group_info[0].connectivity_info
+#                 (public_access.type), encryption_info
+#                 (encryption_in_transit.in_cluster, client_broker),
+#                 client_authentication.unauthenticated
+# ============================================================
+
+resource "aws_msk_cluster" "example" {
+  cluster_name           = "example-cluster"
+  kafka_version          = "3.5.1"
+  number_of_broker_nodes = 2
+
+  broker_node_group_info {
+    instance_type   = "kafka.m5.large"
+    client_subnets  = ["subnet-00b29a1440b8967e9", "subnet-048cfe24c2f869a51"]  # real subnets
+    security_groups = ["sg-0f42bf49d3ee957d7"]                                  # default SG
+    storage_info {
+      ebs_storage_info {
+        volume_size = 100
+      }
+    }
+    connectivity_info {                   # checked
+      public_access {
+        type = "DISABLED"                 # checked: must not be SERVICE_PROVIDED_EIPS
+      }
+    }
+  }
+
+  encryption_info {                       # checked
+    encryption_in_transit {
+      client_broker = "TLS"              # checked
+      in_cluster    = true               # checked
+    }
+  }
+
+  client_authentication {               # checked
+    unauthenticated = false             # checked: must not be true
+    sasl {
+      iam = true                        # checked: at least one auth mechanism required
+    }
+  }
+}
+
+# MSK Connect blocked by org SCP — plan-time policy evaluation only
+# plugin ARN and role ARN require real resources that can't be created (SCP blocks kafka:*)
+# resource "aws_mskconnect_connector" "example" {
+#   name                 = "example-connector"
+#   kafkaconnect_version = "2.7.1"
+#   capacity {
+#     autoscaling {
+#       mcu_count        = 1
+#       min_worker_count = 1
+#       max_worker_count = 2
+#       scale_in_policy  { cpu_utilization_percentage = 20 }
+#       scale_out_policy { cpu_utilization_percentage = 80 }
+#     }
+#   }
+#   connector_configuration = {
+#     "connector.class" = "com.example.ExampleConnector"
+#     "tasks.max"       = "1"
+#   }
+#   kafka_cluster {
+#     apache_kafka_cluster {
+#       bootstrap_servers = aws_msk_cluster.example.bootstrap_brokers_tls
+#       vpc {
+#         security_groups = ["sg-0f42bf49d3ee957d7"]
+#         subnets         = ["subnet-00b29a1440b8967e9", "subnet-048cfe24c2f869a51"]
+#       }
+#     }
+#   }
+#   kafka_cluster_client_authentication { authentication_type = "NONE" }
+#   kafka_cluster_encryption_in_transit { encryption_type = "TLS" }   # checked
+#   plugin {
+#     custom_plugin {
+#       arn      = "arn:aws:kafkaconnect:us-east-1:778091236250:custom-plugin/example"
+#       revision = 1
+#     }
+#   }
+#   service_execution_role_arn = "arn:aws:iam::778091236250:role/msk-connector-role"
+#   log_delivery {                        # checked
+#     worker_log_delivery {
+#       cloudwatch_logs {
+#         enabled   = true                # checked
+#         log_group = "/aws/mskconnect/example"
+#       }
+#     }
+#   }
+# }
 
