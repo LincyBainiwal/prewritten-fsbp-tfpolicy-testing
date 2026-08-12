@@ -860,7 +860,7 @@ resource "aws_rds_cluster_instance" "example" {
 }
 
 resource "aws_db_snapshot" "example" {
-  db_instance_identifier = aws_db_instance.example.id
+  db_instance_identifier = aws_db_instance.example.identifier
   db_snapshot_identifier = "example-snapshot"
   # encrypted = true inherited from encrypted db instance (checked)
 }
