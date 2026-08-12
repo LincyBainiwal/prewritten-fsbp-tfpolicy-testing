@@ -21,13 +21,13 @@ provider "aws" {
 # Policies check: retention_period, encryption_type, kms_key_id
 # ============================================================
 
-resource "aws_kinesis_stream" "example" {
-  name             = "example-stream"
-  shard_count      = 1
-  retention_period = 168                  # checked
-  encryption_type  = "KMS"               # checked
-  kms_key_id       = "alias/aws/kinesis"  # checked
-}
+# resource "aws_kinesis_stream" "example" {
+#   name             = "example-stream"
+#   shard_count      = 1
+#   retention_period = 168                  # checked
+#   encryption_type  = "KMS"               # checked
+#   kms_key_id       = "alias/aws/kinesis"  # checked
+# }
 
 
 # ============================================================
@@ -36,12 +36,12 @@ resource "aws_kinesis_stream" "example" {
 #                 enable_key_rotation
 # ============================================================
 
-resource "aws_kms_key" "example" {
-  description             = "example-kms-key"
-  enable_key_rotation     = true          # checked
-  is_enabled              = true          # checked
-  deletion_window_in_days = 30            # checked
-}
+# resource "aws_kms_key" "example" {
+#   description             = "example-kms-key"
+#   enable_key_rotation     = true          # checked
+#   is_enabled              = true          # checked
+#   deletion_window_in_days = 30            # checked
+# }
 
 
 
@@ -51,34 +51,34 @@ resource "aws_kms_key" "example" {
 # Policies check: vpc (public zone = no vpc block), zone_id, name
 # ============================================================
 
-resource "aws_route53_zone" "example" {                         # ✅ applied & destroyed
-  name = "example-778091236250.com"
-}
+# resource "aws_route53_zone" "example" {                         # ✅ applied & destroyed
+#   name = "example-778091236250.com"
+# }
 
-resource "aws_cloudwatch_log_group" "route53_query_logs" {      # ✅ applied & destroyed
-  name              = "/aws/route53/example-778091236250.com"
-  retention_in_days = 90
-}
+# resource "aws_cloudwatch_log_group" "route53_query_logs" {      # ✅ applied & destroyed
+#   name              = "/aws/route53/example-778091236250.com"
+#   retention_in_days = 90
+# }
 
-resource "aws_cloudwatch_log_resource_policy" "route53_query_logs" {  # ✅ applied & destroyed
-  policy_name = "route53-query-logging-policy"
-  policy_document = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Sid    = "Route53LogsToCloudWatchLogs"
-      Effect = "Allow"
-      Principal = { Service = "route53.amazonaws.com" }
-      Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
-      Resource = "${aws_cloudwatch_log_group.route53_query_logs.arn}:*"
-    }]
-  })
-}
+# resource "aws_cloudwatch_log_resource_policy" "route53_query_logs" {  # ✅ applied & destroyed
+#   policy_name = "route53-query-logging-policy"
+#   policy_document = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [{
+#       Sid    = "Route53LogsToCloudWatchLogs"
+#       Effect = "Allow"
+#       Principal = { Service = "route53.amazonaws.com" }
+#       Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
+#       Resource = "${aws_cloudwatch_log_group.route53_query_logs.arn}:*"
+#     }]
+#   })
+# }
 
-resource "aws_route53_query_log" "example" {                    # ✅ applied & destroyed
-  zone_id                  = aws_route53_zone.example.zone_id
-  cloudwatch_log_group_arn = aws_cloudwatch_log_group.route53_query_logs.arn
-  depends_on = [aws_cloudwatch_log_resource_policy.route53_query_logs]
-}
+# resource "aws_route53_query_log" "example" {                    # ✅ applied & destroyed
+#   zone_id                  = aws_route53_zone.example.zone_id
+#   cloudwatch_log_group_arn = aws_cloudwatch_log_group.route53_query_logs.arn
+#   depends_on = [aws_cloudwatch_log_resource_policy.route53_query_logs]
+# }
 
 
 
@@ -192,4 +192,247 @@ resource "aws_route53_query_log" "example" {                    # ✅ applied & 
 
 
 
+
+
+# ============================================================
+# S3
+# Policies check: bucket (name), acl, access_control_policy,
+#                 block_public_acls, block_public_policy,
+#                 ignore_public_acls, restrict_public_buckets,
+#                 policy (JSON - no blacklisted actions),
+#                 details[0].public_access_block (MRAP),
+#                 lifecycle_rule (bucket lifecycle check)
+# ============================================================
+
+# resource "aws_s3_bucket" "example" {               # ✅ applied & destroyed
+#   bucket = "example-bucket-778091236250"
+# }
+
+# resource "aws_s3_bucket_public_access_block" "example" {
+#   bucket                  = aws_s3_bucket.example.id
+#   block_public_acls       = true
+#   block_public_policy     = true
+#   ignore_public_acls      = true
+#   restrict_public_buckets = true
+# }
+
+# #aws_s3_bucket_acl removed: s3-bucket-acl-prohibited flags any bucket with acl resource
+
+# resource "aws_s3_bucket_lifecycle_configuration" "example" {
+#   bucket = aws_s3_bucket.example.id
+#   rule {
+#     id     = "example-rule"
+#     status = "Enabled"
+#     expiration {
+#       days = 365
+#     }
+#   }
+# }
+
+# resource "aws_s3_bucket_logging" "example" {
+#   bucket        = aws_s3_bucket.example.id
+#   target_bucket = aws_s3_bucket.example.id
+#   target_prefix = "access-logs/"
+# }
+
+# resource "aws_s3_bucket_policy" "example" {
+#   bucket = aws_s3_bucket.example.id
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [{
+#       Sid       = "DenyNonSSL"
+#       Effect    = "Deny"
+#       Principal = "*"
+#       Action    = "s3:*"
+#       Resource  = [
+#         "arn:aws:s3:::example-bucket-778091236250",
+#         "arn:aws:s3:::example-bucket-778091236250/*"
+#       ]
+#       Condition = {
+#         Bool = { "aws:SecureTransport" = "false" }
+#       }
+#     }]
+#   })
+# }
+
+# resource "aws_s3_account_public_access_block" "example" {
+#   block_public_acls       = true
+#   block_public_policy     = true
+#   ignore_public_acls      = true
+#   restrict_public_buckets = true
+# }
+
+# resource "aws_s3_access_point" "example" {
+#   bucket = aws_s3_bucket.example.id
+#   name   = "example-access-point"
+#   public_access_block_configuration {
+#     block_public_acls       = true
+#     block_public_policy     = true
+#     ignore_public_acls      = true
+#     restrict_public_buckets = true
+#   }
+# }
+
+# resource "aws_s3control_multi_region_access_point" "example" {
+#   details {
+#     name = "example-mrap"
+#     region {
+#       bucket = aws_s3_bucket.example.id
+#     }
+#     public_access_block {
+#       block_public_acls       = true
+#       block_public_policy     = true
+#       ignore_public_acls      = true
+#       restrict_public_buckets = true
+#     }
+#   }
+# }
+
+# resource "aws_s3_directory_bucket" "example" {      # ✅ applied & destroyed
+#   bucket = "example-bucket--use1-az4--x-s3"
+#   location {
+#     name = "use1-az4"
+#   }
+# }
+
+# resource "aws_s3_bucket_lifecycle_configuration" "directory_bucket" {
+#   bucket = aws_s3_directory_bucket.example.bucket
+#   rule {
+#     id     = "dir-bucket-expiry"
+#     status = "Enabled"
+#     expiration {
+#       days = 30
+#     }
+#   }
+# }
+
+
+
+
+
+
+# ============================================================
+# SES
+# Policies check: delivery_options (tls_policy = REQUIRE)
+# ============================================================
+
+resource "aws_ses_configuration_set" "example" {
+  name = "example-config-set"
+  delivery_options {
+    tls_policy = "Require"               # checked
+  }
+}
+
+resource "aws_sesv2_configuration_set" "example" {
+  configuration_set_name = "example-v2-config-set"
+  delivery_options {
+    tls_policy = "REQUIRE"               # checked
+  }
+}
+
+
+
+
+
+# ============================================================
+# SNS
+# Policies check: policy (JSON - no public principal *),
+#                 topic inline policy
+# ============================================================
+
+resource "aws_sns_topic" "example" {
+  name   = "example-topic"
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { AWS = "arn:aws:iam::778091236250:root" }
+      Action    = "SNS:Publish"
+      Resource  = "arn:aws:sns:us-east-1:778091236250:example-topic"
+    }]
+  })
+}
+
+resource "aws_sns_topic_policy" "example" {
+  arn = aws_sns_topic.example.arn
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { AWS = "arn:aws:iam::778091236250:root" }
+      Action    = "SNS:Publish"
+      Resource  = aws_sns_topic.example.arn
+    }]
+  })
+}
+
+
+
+
+
+# ============================================================
+# SQS
+# Policies check: sqs_managed_sse_enabled, kms_master_key_id,
+#                 policy (no public * access)
+# ============================================================
+
+resource "aws_sqs_queue" "example" {
+  name              = "example-queue"
+  kms_master_key_id = "alias/aws/sqs"
+}
+
+resource "aws_sqs_queue_policy" "example" {
+  queue_url = aws_sqs_queue.example.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { AWS = "arn:aws:iam::778091236250:root" }
+      Action    = "sqs:SendMessage"
+      Resource  = aws_sqs_queue.example.arn
+    }]
+  })
+}
+
+
+
+
+
+# ============================================================
+# SSM
+# Policies check:
+#   ssm-document-not-public            → aws_ssm_document: permissions must not contain "All" in account_ids
+#   ssm-automation-block-public-sharing → aws_ssm_service_setting: setting_id = exact path, setting_value = "Disable"
+#   ssm-automation-logging-enabled     → aws_ssm_service_setting: non-empty setting_value
+#                                        aws_cloudwatch_log_group: non-empty name
+# ============================================================
+
+resource "aws_ssm_document" "example" {
+  name          = "example-document"
+  document_type = "Command"
+  content = jsonencode({
+    schemaVersion = "2.2"
+    description   = "Example SSM document"
+    mainSteps = [{
+      action = "aws:runShellScript"
+      name   = "runScript"
+      inputs = { runCommand = ["echo hello"] }
+    }]
+  })
+}
+
+resource "aws_ssm_service_setting" "block_sharing" {
+  setting_id    = "/ssm/documents/console/public-sharing-permission"
+  setting_value = "Disable"
+}
+
+resource "aws_ssm_service_setting" "logging" {
+  setting_id    = "arn:aws:ssm:us-east-1:778091236250:servicesetting/ssm/automation/customer-script-log-destination"
+  setting_value = "CloudWatch"
+}
+
+resource "aws_cloudwatch_log_group" "ssm_automation" {
+  name              = "/aws/ssm/automation/executeScript"
+  retention_in_days = 7
+}
 
