@@ -535,16 +535,51 @@ provider "aws" {
 #   retention_in_days = 90
 # }
 
-# resource "aws_networkfirewall_firewall" "example" {        # ✅ applied & destroyed
-#   name                     = "example-firewall"
-#   firewall_policy_arn      = aws_networkfirewall_firewall_policy.example.arn
-#   vpc_id                   = "vpc-0cea84131196c634c"
-#   delete_protection        = true
-#   subnet_change_protection = true
-#   subnet_mapping {
-#     subnet_id = "subnet-00b29a1440b8967e9"
-#   }
-# }
+# TEMP: uncommented to disable delete_protection before destroy
+resource "aws_networkfirewall_firewall" "example" {
+  name                     = "example-firewall"
+  firewall_policy_arn      = aws_networkfirewall_firewall_policy.example.arn
+  vpc_id                   = "vpc-0cea84131196c634c"
+  delete_protection        = false              # ← changed from true so destroy works
+  subnet_change_protection = false              # ← changed from true so destroy works
+  subnet_mapping {
+    subnet_id = "subnet-00b29a1440b8967e9"
+  }
+}
+
+resource "aws_networkfirewall_firewall_policy" "example" {
+  name = "example-firewall-policy"
+  firewall_policy {
+    stateless_default_actions          = ["aws:forward_to_sfe"]
+    stateless_fragment_default_actions = ["aws:forward_to_sfe"]
+    stateless_rule_group_reference {
+      priority     = 1
+      resource_arn = aws_networkfirewall_rule_group.example.arn
+    }
+  }
+}
+
+resource "aws_networkfirewall_rule_group" "example" {
+  capacity = 100
+  name     = "example-rule-group"
+  type     = "STATELESS"
+  rule_group {
+    rules_source {
+      stateless_rules_and_custom_actions {
+        stateless_rule {
+          priority = 1
+          rule_definition {
+            actions = ["aws:pass"]
+            match_attributes {
+              source      { address_definition = "0.0.0.0/0" }
+              destination { address_definition = "0.0.0.0/0" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
 
 # resource "aws_networkfirewall_logging_configuration" "example" {  # ✅ applied & destroyed
 #   firewall_arn = aws_networkfirewall_firewall.example.arn
@@ -573,145 +608,145 @@ provider "aws" {
 #                 policy (JSON), user, policy_arn
 # ============================================================
 
-resource "aws_config_config_rule" "access_keys" {
-  name = "access-keys-rotated"            # checked: exact name
-  source {
-    owner             = "AWS"             # checked
-    source_identifier = "ACCESS_KEYS_ROTATED"  # checked
-  }
-  input_parameters = jsonencode({ maxAccessKeyAge = "90" })  # checked
-}
+# resource "aws_config_config_rule" "access_keys" {
+#   name = "access-keys-rotated"            # checked: exact name
+#   source {
+#     owner             = "AWS"             # checked
+#     source_identifier = "ACCESS_KEYS_ROTATED"  # checked
+#   }
+#   input_parameters = jsonencode({ maxAccessKeyAge = "90" })  # checked
+# }
 
-resource "aws_config_config_rule" "unused_credentials" {
-  name = "iam-user-unused-credentials-check"  # checked: exact name
-  source {
-    owner             = "AWS"             # checked
-    source_identifier = "IAM_USER_UNUSED_CREDENTIALS_CHECK"  # checked
-  }
-  input_parameters = jsonencode({ maxCredentialUsageAge = "90" })  # checked
-}
+# resource "aws_config_config_rule" "unused_credentials" {
+#   name = "iam-user-unused-credentials-check"  # checked: exact name
+#   source {
+#     owner             = "AWS"             # checked
+#     source_identifier = "IAM_USER_UNUSED_CREDENTIALS_CHECK"  # checked
+#   }
+#   input_parameters = jsonencode({ maxCredentialUsageAge = "90" })  # checked
+# }
 
-resource "aws_iam_account_password_policy" "example" {
-  minimum_password_length      = 14       # checked
-  require_uppercase_characters = true     # checked
-  require_lowercase_characters = true     # checked
-  require_numbers              = true     # checked
-  require_symbols              = true     # checked
-  max_password_age             = 90       # checked
-  password_reuse_prevention    = 24       # checked
-}
+# resource "aws_iam_account_password_policy" "example" {
+#   minimum_password_length      = 14       # checked
+#   require_uppercase_characters = true     # checked
+#   require_lowercase_characters = true     # checked
+#   require_numbers              = true     # checked
+#   require_symbols              = true     # checked
+#   max_password_age             = 90       # checked
+#   password_reuse_prevention    = 24       # checked
+# }
 
-resource "aws_iam_policy" "example" {
-  name = "example-policy"                 # checked
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect   = "Allow"
-      Action   = ["s3:GetObject"]         # checked: no wildcards like s3:*
-      Resource = "*"
-    }]
-  })
-}
+# resource "aws_iam_policy" "example" {
+#   name = "example-policy"                 # checked
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [{
+#       Effect   = "Allow"
+#       Action   = ["s3:GetObject"]         # checked: no wildcards like s3:*
+#       Resource = "*"
+#     }]
+#   })
+# }
 
-resource "aws_iam_role_policy" "example" {
-  name = "example-role-policy"
-  role = "example-role"
-  policy = jsonencode({                   # checked
-    Version = "2012-10-17"
-    Statement = [{
-      Effect   = "Allow"
-      Action   = ["s3:GetObject"]
-      Resource = "*"
-    }]
-  })
-}
+# resource "aws_iam_role_policy" "example" {
+#   name = "example-role-policy"
+#   role = "example-role"
+#   policy = jsonencode({                   # checked
+#     Version = "2012-10-17"
+#     Statement = [{
+#       Effect   = "Allow"
+#       Action   = ["s3:GetObject"]
+#       Resource = "*"
+#     }]
+#   })
+# }
 
-resource "aws_iam_user_policy" "example" {
-  name = "example-user-policy"
-  user = "example-user"                   # checked
-  policy = jsonencode({                   # checked
-    Version = "2012-10-17"
-    Statement = [{
-      Effect   = "Allow"
-      Action   = ["s3:GetObject"]
-      Resource = "*"
-    }]
-  })
-}
+# resource "aws_iam_user_policy" "example" {
+#   name = "example-user-policy"
+#   user = "example-user"                   # checked
+#   policy = jsonencode({                   # checked
+#     Version = "2012-10-17"
+#     Statement = [{
+#       Effect   = "Allow"
+#       Action   = ["s3:GetObject"]
+#       Resource = "*"
+#     }]
+#   })
+# }
 
-resource "aws_iam_group_policy" "example" {
-  name  = "example-group-policy"
-  group = "example-group"
-  policy = jsonencode({                   # checked
-    Version = "2012-10-17"
-    Statement = [{
-      Effect   = "Allow"
-      Action   = ["s3:GetObject"]
-      Resource = "*"
-    }]
-  })
-}
+# resource "aws_iam_group_policy" "example" {
+#   name  = "example-group-policy"
+#   group = "example-group"
+#   policy = jsonencode({                   # checked
+#     Version = "2012-10-17"
+#     Statement = [{
+#       Effect   = "Allow"
+#       Action   = ["s3:GetObject"]
+#       Resource = "*"
+#     }]
+#   })
+# }
 
-resource "aws_iam_access_key" "example" {
-  user = "example-user"                   # checked: not "root"
-}
+# resource "aws_iam_access_key" "example" {
+#   user = "example-user"                   # checked: not "root"
+# }
 
-resource "aws_iam_user_policy_attachment" "example" {
-  user       = "example-user"             # checked
-  policy_arn = aws_iam_policy.example.arn # checked
-}
+# resource "aws_iam_user_policy_attachment" "example" {
+#   user       = "example-user"             # checked
+#   policy_arn = aws_iam_policy.example.arn # checked
+# }
 
-# ============================================================
-# Inspector
-# Policies check: resource_types (list), auto_enable block
-#                 (ec2, ecr, lambda, lambda_code)
-# ============================================================
+# # ============================================================
+# # Inspector
+# # Policies check: resource_types (list), auto_enable block
+# #                 (ec2, ecr, lambda, lambda_code)
+# # ============================================================
 
-resource "aws_inspector2_enabler" "example" {
-  account_ids    = ["123456789012"]
-  resource_types = ["EC2", "ECR", "LAMBDA", "LAMBDA_CODE"]  # checked
-}
+# resource "aws_inspector2_enabler" "example" {
+#   account_ids    = ["123456789012"]
+#   resource_types = ["EC2", "ECR", "LAMBDA", "LAMBDA_CODE"]  # checked
+# }
 
-resource "aws_inspector2_organization_configuration" "example" {
-  auto_enable {                           # checked
-    ec2         = true                   # checked
-    ecr         = true                   # checked
-    lambda      = true                   # checked
-    lambda_code = true                   # checked
-  }
-}
-
-
+# resource "aws_inspector2_organization_configuration" "example" {
+#   auto_enable {                           # checked
+#     ec2         = true                   # checked
+#     ecr         = true                   # checked
+#     lambda      = true                   # checked
+#     lambda_code = true                   # checked
+#   }
+# }
 
 
-# ============================================================
-# Macie
-# Policies check: status
-# ============================================================
 
-resource "aws_macie2_account" "example" {
-  finding_publishing_frequency = "FIFTEEN_MINUTES"
-  status                       = "ENABLED"  # checked
-}
 
-# ============================================================
-# MQ
-# Policies check: engine_type (ActiveMQ), logs.audit
-# ============================================================
+# # ============================================================
+# # Macie
+# # Policies check: status
+# # ============================================================
 
-resource "aws_mq_broker" "example" {
-  broker_name         = "example-broker"
-  engine_type         = "ActiveMQ"        # checked: policy filters on ActiveMQ
-  engine_version      = "5.17.6"
-  host_instance_type  = "mq.m5.large"
-  publicly_accessible = false
+# resource "aws_macie2_account" "example" {
+#   finding_publishing_frequency = "FIFTEEN_MINUTES"
+#   status                       = "ENABLED"  # checked
+# }
 
-  user {
-    username = "admin"
-    password = "Admin1234!XyZ"
-  }
+# # ============================================================
+# # MQ
+# # Policies check: engine_type (ActiveMQ), logs.audit
+# # ============================================================
 
-  logs {
-    audit = true                          # checked
-  }
-}
+# resource "aws_mq_broker" "example" {
+#   broker_name         = "example-broker"
+#   engine_type         = "ActiveMQ"        # checked: policy filters on ActiveMQ
+#   engine_version      = "5.17.6"
+#   host_instance_type  = "mq.m5.large"
+#   publicly_accessible = false
+
+#   user {
+#     username = "admin"
+#     password = "Admin1234!XyZ"
+#   }
+
+#   logs {
+#     audit = true                          # checked
+#   }
+# }
