@@ -16,7 +16,7 @@ input "neptune-cluster-encrypted-enforcement-level" {
   default = "advisory"
 }
 
-input "kms_key_arns" {
+input "neptune-cluster-encrypted-kms-key-arns" {
     type = string
     default = ""
 }
@@ -26,8 +26,8 @@ resource_policy "aws_neptune_cluster" "encrypted-at-rest" {
     locals {
         has_encryption = core::try(attrs.storage_encrypted, false)
         kms_key_arn = local.has_encryption ? core::try(attrs.kms_key_arn, "") : ""
-        kms_key_arns_provided = input.kms_key_arns != ""
-        valid_kms_key_arn = local.kms_key_arns_provided ? (local.kms_key_arn != "" ? core::contains(core::split(",", input.kms_key_arns), local.kms_key_arn) : true) : true
+        kms_key_arns_provided = input.neptune-cluster-encrypted-kms-key-arns != ""
+        valid_kms_key_arn = local.kms_key_arns_provided ? (local.kms_key_arn != "" ? core::contains(core::split(",", input.neptune-cluster-encrypted-kms-key-arns), local.kms_key_arn) : true) : true
     }
 
     enforce {
