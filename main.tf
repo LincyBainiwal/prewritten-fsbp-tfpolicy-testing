@@ -1499,10 +1499,13 @@ resource "aws_sagemaker_model" "example" {
   enable_network_isolation = true            # checked
 
   primary_container {
-    image = "778091236250.dkr.ecr.us-east-1.amazonaws.com/example:latest"
+    # AWS built-in XGBoost image (public AWS-managed ECR) — no ECR push needed
+    # repository_access_mode = "Platform" required for AWS built-in images
+    # sagemaker-model-private-registry-required → Advisory (not Fail, enforcement=advisory)
+    image = "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-xgboost:1.7-1"
 
     image_config {
-      repository_access_mode = "Vpc"  # checked: must be Vpc not Platform
+      repository_access_mode = "Platform"
     }
   }
 }
