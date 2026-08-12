@@ -1080,55 +1080,166 @@ provider "aws" {
 # ============================================================
 
 # IAM role for Transfer Family logging (created via Terraform)
-resource "aws_iam_role" "transfer_logging" {
-  name = "transfer-logging-role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { Service = "transfer.amazonaws.com" }
-      Action    = "sts:AssumeRole"
-    }]
-  })
+# resource "aws_iam_role" "transfer_logging" {
+#   name = "transfer-logging-role"
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [{
+#       Effect    = "Allow"
+#       Principal = { Service = "transfer.amazonaws.com" }
+#       Action    = "sts:AssumeRole"
+#     }]
+#   })
+# }
+
+# resource "aws_iam_role_policy_attachment" "transfer_logging" {
+#   role       = aws_iam_role.transfer_logging.name
+#   policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+# }
+
+# # IAM role for Transfer connector access
+# resource "aws_iam_role" "transfer_connector" {
+#   name = "transfer-role"
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [{
+#       Effect    = "Allow"
+#       Principal = { Service = "transfer.amazonaws.com" }
+#       Action    = "sts:AssumeRole"
+#     }]
+#   })
+# }
+
+# resource "aws_iam_role_policy_attachment" "transfer_connector" {
+#   role       = aws_iam_role.transfer_connector.name
+#   policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+# }
+
+# resource "aws_transfer_server" "example" {
+#   protocols              = ["SFTP"]                      # checked: no FTP
+#   identity_provider_type = "SERVICE_MANAGED"
+#   endpoint_type          = "PUBLIC"
+#   logging_role           = aws_iam_role.transfer_logging.arn  # checked
+# }
+
+# resource "aws_transfer_connector" "example" {
+#   access_role  = aws_iam_role.transfer_connector.arn
+#   url          = "sftp://sftp-partner.example.com"
+#   logging_role = aws_iam_role.transfer_logging.arn       # checked: non-null, non-empty
+
+#   sftp_config {
+#     user_secret_id    = "arn:aws:secretsmanager:us-east-1:778091236250:secret:example-secret-2"
+#     trusted_host_keys = ["ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC0example"]
+#   }
+# }
+
+
+
+
+
+
+# ============================================================
+# GuardDuty
+# Policies check: enable, name, status, auto_enable,
+#                 additional_configuration
+# ============================================================
+
+resource "aws_guardduty_detector" "example" {
+  enable = true                            # checked: guardduty-enabled-centralized
 }
 
-resource "aws_iam_role_policy_attachment" "transfer_logging" {
-  role       = aws_iam_role.transfer_logging.name
-  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+# RUNTIME_MONITORING — covers ec2, ecs, eks, and general runtime policies
+# all 3 additional_configuration blocks needed to satisfy all runtime policies
+resource "aws_guardduty_detector_feature" "runtime_monitoring" {
+  detector_id = aws_guardduty_detector.example.id
+  name        = "RUNTIME_MONITORING"
+  status      = "ENABLED"                 # checked
+
+  additional_configuration {
+    name   = "EKS_ADDON_MANAGEMENT"       # checked: guardduty-eks-protection-runtime-enabled, guardduty-runtime-monitoring-enabled
+    status = "ENABLED"
+  }
+  additional_configuration {
+    name   = "EC2_AGENT_MANAGEMENT"       # checked: guardduty-ec2-protection-runtime-enabled, guardduty-runtime-monitoring-enabled
+    status = "ENABLED"
+  }
+  additional_configuration {
+    name   = "ECS_FARGATE_AGENT_MANAGEMENT"  # checked: guardduty-ecs-protection-runtime-enabled, guardduty-runtime-monitoring-enabled
+    status = "ENABLED"
+  }
 }
 
-# IAM role for Transfer connector access
-resource "aws_iam_role" "transfer_connector" {
-  name = "transfer-role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { Service = "transfer.amazonaws.com" }
-      Action    = "sts:AssumeRole"
-    }]
-  })
+# S3_DATA_EVENTS — guardduty-s3-protection-enabled
+resource "aws_guardduty_detector_feature" "s3_data_events" {
+  detector_id = aws_guardduty_detector.example.id
+  name        = "S3_DATA_EVENTS"
+  status      = "ENABLED"                 # checked
 }
 
-resource "aws_iam_role_policy_attachment" "transfer_connector" {
-  role       = aws_iam_role.transfer_connector.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+# EKS_AUDIT_LOGS — guardduty-eks-protection-audit-enabled
+resource "aws_guardduty_detector_feature" "eks_audit_logs" {
+  detector_id = aws_guardduty_detector.example.id
+  name        = "EKS_AUDIT_LOGS"
+  status      = "ENABLED"                 # checked
 }
 
-resource "aws_transfer_server" "example" {
-  protocols              = ["SFTP"]                      # checked: no FTP
-  identity_provider_type = "SERVICE_MANAGED"
-  endpoint_type          = "PUBLIC"
-  logging_role           = aws_iam_role.transfer_logging.arn  # checked
+# EKS_RUNTIME_MONITORING — guardduty-eks-protection-runtime-enabled
+resource "aws_guardduty_detector_feature" "eks_runtime_monitoring" {
+  detector_id = aws_guardduty_detector.example.id
+  name        = "EKS_RUNTIME_MONITORING"
+  status      = "ENABLED"                 # checked
+
+  additional_configuration {
+    name   = "EKS_ADDON_MANAGEMENT"       # checked
+    status = "ENABLED"
+  }
 }
 
-resource "aws_transfer_connector" "example" {
-  access_role  = aws_iam_role.transfer_connector.arn
-  url          = "sftp://sftp-partner.example.com"
-  logging_role = aws_iam_role.transfer_logging.arn       # checked: non-null, non-empty
+# RDS_LOGIN_EVENTS — guardduty-rds-protection-enabled
+resource "aws_guardduty_detector_feature" "rds_login_events" {
+  detector_id = aws_guardduty_detector.example.id
+  name        = "RDS_LOGIN_EVENTS"
+  status      = "ENABLED"                 # checked
+}
 
-  sftp_config {
-    user_secret_id    = "arn:aws:secretsmanager:us-east-1:778091236250:secret:example-secret-2"
-    trusted_host_keys = ["ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC0example"]
+# EBS_MALWARE_PROTECTION — guardduty-malware-protection-enabled
+resource "aws_guardduty_detector_feature" "ebs_malware_protection" {
+  detector_id = aws_guardduty_detector.example.id
+  name        = "EBS_MALWARE_PROTECTION"
+  status      = "ENABLED"                 # checked
+}
+
+# LAMBDA_NETWORK_LOGS — guardduty-lambda-protection-enabled
+resource "aws_guardduty_detector_feature" "lambda_network_logs" {
+  detector_id = aws_guardduty_detector.example.id
+  name        = "LAMBDA_NETWORK_LOGS"
+  status      = "ENABLED"                 # checked
+}
+
+# Organization configuration features
+# S3_DATA_EVENTS org — guardduty-s3-protection-enabled
+resource "aws_guardduty_organization_configuration_feature" "s3_data_events" {
+  detector_id = aws_guardduty_detector.example.id
+  name        = "S3_DATA_EVENTS"
+  auto_enable = "ALL"                     # checked
+}
+
+# RUNTIME_MONITORING org — covers ec2, ecs, eks, and general runtime org policies
+resource "aws_guardduty_organization_configuration_feature" "runtime_monitoring" {
+  detector_id = aws_guardduty_detector.example.id
+  name        = "RUNTIME_MONITORING"
+  auto_enable = "ALL"                     # checked
+
+  additional_configuration {
+    name        = "EKS_ADDON_MANAGEMENT"
+    auto_enable = "ALL"
+  }
+  additional_configuration {
+    name        = "EC2_AGENT_MANAGEMENT"
+    auto_enable = "ALL"
+  }
+  additional_configuration {
+    name        = "ECS_FARGATE_AGENT_MANAGEMENT"
+    auto_enable = "ALL"
   }
 }
