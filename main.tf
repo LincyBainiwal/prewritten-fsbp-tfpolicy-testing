@@ -1300,147 +1300,17 @@ provider "aws" {
 #                 visibility_config.cloudwatch_metrics_enabled (wafv2)
 # ============================================================
 
-# Kinesis Firehose delivery stream required by aws_waf_web_acl logging_configuration
-# Name must start with "aws-waf-logs-" — AWS requirement
-
-resource "aws_s3_bucket" "waf_logs" {
-  bucket        = "waf-logs-example-778091236250"
-  force_destroy = true
-}
-
-resource "aws_iam_role" "firehose_waf_logs" {
-  name = "firehose-waf-logs-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { Service = "firehose.amazonaws.com" }
-      Action    = "sts:AssumeRole"
-    }]
-  })
-}
-
-resource "aws_iam_role_policy" "firehose_waf_logs" {
-  name = "firehose-waf-logs-policy"
-  role = aws_iam_role.firehose_waf_logs.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect   = "Allow"
-      Action   = ["s3:PutObject", "s3:GetBucketLocation", "s3:ListBucket"]
-      Resource = [
-        aws_s3_bucket.waf_logs.arn,
-        "${aws_s3_bucket.waf_logs.arn}/*"
-      ]
-    }]
-  })
-}
-
-resource "aws_kinesis_firehose_delivery_stream" "waf_logs" {
-  name        = "aws-waf-logs-example"
-  destination = "extended_s3"
-
-  extended_s3_configuration {
-    role_arn   = aws_iam_role.firehose_waf_logs.arn
-    bucket_arn = aws_s3_bucket.waf_logs.arn
-  }
-}
-
-resource "aws_waf_ipset" "example" {
-  name = "example-waf-ipset"
-
-  ip_set_descriptors {
-    type  = "IPV4"
-    value = "192.0.2.0/24"
-  }
-}
-
-resource "aws_waf_rule" "example" {
-  name        = "example-waf-rule"
-  metric_name = "exampleWafRule"
-
-  predicates {                           # checked: must have >= 1 predicate
-    data_id = aws_waf_ipset.example.id   # real IP set reference
-    negated = false
-    type    = "IPMatch"
-  }
-}
-
-resource "aws_waf_rule_group" "example" {
-  name        = "example-waf-rule-group"
-  metric_name = "exampleWafRuleGroup"
-
-  activated_rule {                       # checked: must have >= 1 activated_rule
-    action { type = "COUNT" }
-    priority = 1
-    rule_id  = aws_waf_rule.example.id
-  }
-}
-
-resource "aws_waf_web_acl" "example" {
-  name        = "example-waf-acl"
-  metric_name = "exampleWafAcl"
-
-  default_action { type = "ALLOW" }
-
-  rules {                                # checked: must have >= 1 rule
-    priority = 1
-    rule_id  = aws_waf_rule.example.id
-    type     = "REGULAR"
-    action   { type = "COUNT" }
-  }
-
-  logging_configuration {               # checked: waf-classic-logging-enabled
-    log_destination = aws_kinesis_firehose_delivery_stream.waf_logs.arn  # name starts with aws-waf-logs-
-  }
-}
-
-resource "aws_wafregional_ipset" "example" {
-  name = "example-wafregional-ipset"
-
-  ip_set_descriptor {
-    type  = "IPV4"
-    value = "192.0.2.0/24"
-  }
-}
-
-resource "aws_wafregional_rule" "example" {
-  name        = "example-wafregional-rule"
-  metric_name = "exampleWafRegionalRule"
-
-  predicate {                            # checked: must have >= 1 predicate
-    data_id = aws_wafregional_ipset.example.id  # real IP set reference
-    negated = false
-    type    = "IPMatch"
-  }
-}
-
-resource "aws_wafregional_rule_group" "example" {
-  name        = "example-wafregional-rule-group"
-  metric_name = "exampleWafRegionalRuleGroup"
-
-  activated_rule {                       # checked: must have >= 1 activated_rule
-    action { type = "COUNT" }
-    priority = 1
-    rule_id  = aws_wafregional_rule.example.id
-  }
-}
-
-resource "aws_wafregional_web_acl" "example" {
-  name        = "example-wafregional-acl"
-  metric_name = "exampleWafRegionalAcl"
-
-  default_action { type = "ALLOW" }
-
-  rule {                                 # checked: must have >= 1 rule
-    priority = 1
-    rule_id  = aws_wafregional_rule.example.id
-    type     = "REGULAR"
-    action   { type = "COUNT" }
-  }
-}
+# WAF Classic Global + Regional blocked by org SCP (explicit deny on waf:* and waf-regional:*)
+# Firehose/S3/IAM role for logging also removed — only needed for Classic WAF web ACL.
+# Same pattern as GuardDuty. Policies evaluate at plan time → Unknown (no resources in plan).
+# resource "aws_waf_ipset" "example" { ... }
+# resource "aws_waf_rule" "example" { ... }
+# resource "aws_waf_rule_group" "example" { ... }
+# resource "aws_waf_web_acl" "example" { ... }          # waf-global-rule-not-empty, waf-classic-logging-enabled
+# resource "aws_wafregional_ipset" "example" { ... }
+# resource "aws_wafregional_rule" "example" { ... }
+# resource "aws_wafregional_rule_group" "example" { ... }
+# resource "aws_wafregional_web_acl" "example" { ... }  # waf-regional-rule-not-empty
 
 resource "aws_wafv2_rule_group" "example" {
   name     = "example-wafv2-rule-group"
