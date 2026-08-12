@@ -1396,3 +1396,19 @@ provider "aws" {
 #   user_volume_encryption_enabled = true
 #   volume_encryption_key          = "alias/aws/workspaces"
 # }
+
+
+
+
+# ============================================================
+# Service Catalog
+# Policies check: type (must be ORGANIZATION)
+# ============================================================
+
+# Service Catalog blocked by org SCP (explicit deny on servicecatalog:*)
+# Same pattern as GuardDuty, WAF Classic, WorkSpaces. Policies → Unknown at plan time.
+# resource "aws_servicecatalog_portfolio_share" "example" {
+#   portfolio_id = "port-12345678"
+#   type         = "ORGANIZATION"
+#   principal_id = "arn:aws:organizations::778091236250:organization/o-xxxxxxxxxxxx"
+# }
