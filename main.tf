@@ -1007,19 +1007,75 @@ provider "aws" {
 #                 (automatically_after_days or schedule_expression)
 # ============================================================
 
-resource "aws_secretsmanager_secret" "example" {
-  name = "example-secret-2"              # checked
+# resource "aws_secretsmanager_secret" "example" {
+#   name = "example-secret-2"              # checked
 
-  tags = {
-    LastAccessed = "2025-01-01"          # checked: required by secretsmanager-secret-unused policy
+#   tags = {
+#     LastAccessed = "2025-01-01"          # checked: required by secretsmanager-secret-unused policy
+#   }
+# }
+
+# resource "aws_secretsmanager_secret_rotation" "example" {
+#   secret_id           = aws_secretsmanager_secret.example.name  # use .name so rotation-enabled-check policy can match at plan time
+#   rotation_lambda_arn = "arn:aws:lambda:us-east-1:778091236250:function:example-rotation"
+
+#   rotation_rules {
+#     automatically_after_days = 30        # checked
+#   }
+# }.   
+
+
+
+
+# ============================================================
+# Step Functions
+# Policies check: logging_configuration (log_destination,
+#                 include_execution_data, level)
+# ============================================================
+
+# Dedicated CloudWatch log group for Step Functions
+resource "aws_cloudwatch_log_group" "stepfunctions" {
+  name              = "/aws/stepfunctions/example"   # checked: non-empty name
+  retention_in_days = 7
+}
+
+
+resource "aws_sfn_state_machine" "example" {
+  name     = "example-state-machine"
+  role_arn = "arn:aws:iam::778091236250:role/step-functions-role"  # fixed: real account ID
+
+  definition = jsonencode({
+    Comment = "Example state machine"
+    StartAt = "HelloWorld"
+    States  = { HelloWorld = { Type = "Pass", End = true } }
+  })
+
+  logging_configuration {               # checked
+    log_destination        = "${aws_cloudwatch_log_group.stepfunctions.arn}:*"  # fixed: correct log group ref
+    include_execution_data = true
+    level                  = "ALL"      # checked: ERROR / ALL
   }
 }
 
-resource "aws_secretsmanager_secret_rotation" "example" {
-  secret_id           = aws_secretsmanager_secret.example.name  # use .name so rotation-enabled-check policy can match at plan time
-  rotation_lambda_arn = "arn:aws:lambda:us-east-1:778091236250:function:example-rotation"
+# ============================================================
+# Transfer
+# Policies check: protocols (no FTP), logging_role
+# ============================================================
 
-  rotation_rules {
-    automatically_after_days = 30        # checked
-  }
-}
+# resource "aws_transfer_server" "example" {
+#   protocols              = ["SFTP"]      # checked: no FTP
+#   identity_provider_type = "SERVICE_MANAGED"
+#   endpoint_type          = "PUBLIC"
+#   logging_role           = "arn:aws:iam::123456789012:role/transfer-logging-role"
+# }
+
+# resource "aws_transfer_connector" "example" {
+#   access_role  = "arn:aws:iam::123456789012:role/transfer-role"
+#   url          = "sftp://sftp-partner.example.com"
+#   logging_role = "arn:aws:iam::123456789012:role/transfer-logging-role"  # checked: non-null, non-empty
+
+#   sftp_config {
+#     user_secret_id    = "arn:aws:secretsmanager:us-east-1:123456789012:secret:example"
+#     trusted_host_keys = ["ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC0example"]  # required by provider
+#   }
+# }
