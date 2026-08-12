@@ -812,21 +812,22 @@ resource "aws_db_instance" "example" {
   skip_final_snapshot                 = true
 }
 
-# resource "aws_rds_cluster_parameter_group" "example" {
-#   name        = "example-aurora-mysql-pg"
-#   family      = "aurora-mysql8.0"
-#   description = "Aurora MySQL parameter group with audit logging"
+# TEMP: uncommented so Terraform does not try to delete it while cluster still uses it
+resource "aws_rds_cluster_parameter_group" "example" {
+  name        = "example-aurora-mysql-pg"
+  family      = "aurora-mysql8.0"
+  description = "Aurora MySQL parameter group with audit logging"
 
-#   parameter {
-#     name  = "server_audit_logging"
-#     value = "1"                         # checked: enables audit logging
-#   }
+  parameter {
+    name  = "server_audit_logging"
+    value = "1"
+  }
 
-#   parameter {
-#     name  = "server_audit_events"
-#     value = "CONNECT,QUERY,QUERY_DCL,QUERY_DDL,QUERY_DML"  # checked: non-empty
-#   }
-# }
+  parameter {
+    name  = "server_audit_events"
+    value = "CONNECT,QUERY,QUERY_DCL,QUERY_DDL,QUERY_DML"
+  }
+}
 
 # TEMP: uncommented to disable deletion_protection before destroy
 resource "aws_rds_cluster" "example" {
@@ -845,7 +846,7 @@ resource "aws_rds_cluster" "example" {
   availability_zones                  = ["us-east-1a", "us-east-1b", "us-east-1c"]
   port                                = 3307
   backtrack_window                    = 72
-  db_cluster_parameter_group_name     = "example-aurora-mysql-pg"
+  db_cluster_parameter_group_name     = aws_rds_cluster_parameter_group.example.name
   skip_final_snapshot                 = true
 }
 
