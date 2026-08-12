@@ -759,15 +759,15 @@ provider "aws" {
 # Policies check: command (list), glue_version, name
 # ============================================================
 
-resource "aws_glue_job" "example" {
-  name         = "example-glue-job"       # checked
-  role_arn     = "arn:aws:iam::123456789012:role/glue-role"
-  glue_version = "3.0"                    # checked: 3.0 or 4.0 supported
-  command {
-    name            = "glueetl"           # checked: command block required
-    script_location = "s3://my-bucket/scripts/example.py"
-  }
-}
+# resource "aws_glue_job" "example" {
+#   name         = "example-glue-job"       # checked
+#   role_arn     = "arn:aws:iam::778091236250:role/glue-role"
+#   glue_version = "3.0"                    # checked: 3.0 or 4.0 supported
+#   command {
+#     name            = "glueetl"           # checked: command block required
+#     script_location = "s3://my-bucket/scripts/example.py"
+#   }
+# }
 
 
 
@@ -942,59 +942,59 @@ resource "aws_glue_job" "example" {
 #                 enhanced_vpc_routing, config_parameter
 # ============================================================
 
-# resource "aws_redshift_parameter_group" "example" {
-#   name   = "example-redshift-pg"
-#   family = "redshift-1.0"
+resource "aws_redshift_parameter_group" "example" {
+  name   = "example-redshift-pg"
+  family = "redshift-1.0"
 
-#   parameter {
-#     name  = "require_ssl"
-#     value = "true"                      # checked: TLS required
-#   }
-# }
+  parameter {
+    name  = "require_ssl"
+    value = "true"                      # checked: TLS required
+  }
+}
 
-# resource "aws_redshift_cluster" "example" {
-#   cluster_identifier                  = "example-cluster"
-#   database_name                       = "exampledb"
-#   master_username                     = "exampleadmin"  # checked: not "awsuser"
-#   master_password                     = "Admin1234!"
-#   node_type                           = "dc2.large"
-#   cluster_type                        = "single-node"
-#   encrypted                           = true           # checked
-#   kms_key_id                          = "arn:aws:kms:us-east-1:123456789012:key/example"  # checked
-#   publicly_accessible                 = false          # checked
-#   enhanced_vpc_routing                = true           # checked
-#   automated_snapshot_retention_period = 7              # checked
-#   allow_version_upgrade               = true           # checked
-#   preferred_maintenance_window        = "sun:05:00-sun:06:00"  # checked
-#   port                                = 5440           # checked: not default 5439
-#   cluster_parameter_group_name        = aws_redshift_parameter_group.example.name  # checked: require_ssl policy
-#   skip_final_snapshot                 = true
-# }
+resource "aws_redshift_cluster" "example" {
+  cluster_identifier                  = "example-cluster"
+  database_name                       = "exampledb"
+  master_username                     = "exampleadmin"  # checked: not "awsuser"
+  master_password                     = "Admin1234!"
+  node_type                           = "dc2.large"
+  cluster_type                        = "single-node"
+  encrypted                           = true           # checked
+  kms_key_id                          = "arn:aws:kms:us-east-1:123456789012:key/example"  # checked
+  publicly_accessible                 = false          # checked
+  enhanced_vpc_routing                = true           # checked
+  automated_snapshot_retention_period = 7              # checked
+  allow_version_upgrade               = true           # checked
+  preferred_maintenance_window        = "sun:05:00-sun:06:00"  # checked
+  port                                = 5440           # checked: not default 5439
+  cluster_parameter_group_name        = aws_redshift_parameter_group.example.name  # checked: require_ssl policy
+  skip_final_snapshot                 = true
+}
 
-# resource "aws_redshift_logging" "example" {
-#   cluster_identifier   = aws_redshift_cluster.example.id
-#   log_destination_type = "cloudwatch"    # checked
-#   log_exports          = ["connectionlog", "userlog", "useractivitylog"]  # checked
-# }
+resource "aws_redshift_logging" "example" {
+  cluster_identifier   = aws_redshift_cluster.example.id
+  log_destination_type = "cloudwatch"    # checked
+  log_exports          = ["connectionlog", "userlog", "useractivitylog"]  # checked
+}
 
-# resource "aws_redshiftserverless_namespace" "example" {
-#   namespace_name      = "example-namespace"
-#   admin_username      = "exampleadmin"   # checked: not "admin"
-#   admin_user_password = "Admin1234!"
-#   log_exports         = ["userlog", "connectionlog", "useractivitylog"]  # checked
-# }
+resource "aws_redshiftserverless_namespace" "example" {
+  namespace_name      = "example-namespace"
+  admin_username      = "exampleadmin"   # checked: not "admin"
+  admin_user_password = "Admin1234!"
+  log_exports         = ["userlog", "connectionlog", "useractivitylog"]  # checked
+}
 
-# resource "aws_redshiftserverless_workgroup" "example" {
-#   namespace_name       = aws_redshiftserverless_namespace.example.namespace_name
-#   workgroup_name       = "example-workgroup"
-#   publicly_accessible  = false           # checked
-#   enhanced_vpc_routing = true            # checked
-#   subnet_ids           = ["subnet-12345678", "subnet-87654321"]
+resource "aws_redshiftserverless_workgroup" "example" {
+  namespace_name       = aws_redshiftserverless_namespace.example.namespace_name
+  workgroup_name       = "example-workgroup"
+  publicly_accessible  = false           # checked
+  enhanced_vpc_routing = true            # checked
+  subnet_ids           = ["subnet-12345678", "subnet-87654321"]
 
-#   config_parameter {                     # checked: require_ssl
-#     parameter_key   = "require_ssl"
-#     parameter_value = "true"
-#   }
-# }
+  config_parameter {                     # checked: require_ssl
+    parameter_key   = "require_ssl"
+    parameter_value = "true"
+  }
+}
 
 
