@@ -1272,7 +1272,7 @@ resource "aws_fsx_openzfs_file_system" "example" {
   storage_capacity     = 64
   subnet_ids           = ["subnet-00b29a1440b8967e9", "subnet-048cfe24c2f869a51"]
   deployment_type      = "MULTI_AZ_1"     # checked
-  throughput_capacity  = 64
+  throughput_capacity  = 160              # minimum valid value for MULTI_AZ_1
   copy_tags_to_backups = true             # checked
   copy_tags_to_volumes = true             # checked
 }
