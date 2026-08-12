@@ -1445,3 +1445,105 @@ provider "aws" {
 #   source_arn     = "arn:aws:sns:us-east-1:778091236250:example-topic"
 #   source_account = "778091236250"
 # }
+
+
+
+
+# ============================================================
+# SageMaker
+# Policies check: subnet_id, direct_internet_access, root_access,
+#                 platform_identifier, security_groups,
+#                 enable_network_isolation, primary_container (image),
+#                 production_variants (initial_instance_count >= 2),
+#                 network_config (enable_network_isolation,
+#                 enable_inter_container_traffic_encryption),
+#                 monitoring_schedule_config
+# ============================================================
+
+resource "aws_sagemaker_notebook_instance" "example" {
+  name                   = "example-notebook"
+  role_arn               = "arn:aws:iam::123456789012:role/sagemaker-role"
+  instance_type          = "ml.t3.medium"
+  subnet_id              = "subnet-12345678"   # checked: must be set (VPC)
+  direct_internet_access = "Disabled"          # checked
+  root_access            = "Disabled"          # checked
+  platform_identifier    = "notebook-al2-v3"   # checked: al2-v3 required (al2-v2 is deprecated)
+  security_groups        = ["sg-12345678"]     # checked
+}
+
+resource "aws_sagemaker_model" "example" {
+  name               = "example-model"
+  execution_role_arn = "arn:aws:iam::123456789012:role/sagemaker-role"
+
+  enable_network_isolation = true            # checked
+
+  primary_container {
+    image = "123456789012.dkr.ecr.us-east-1.amazonaws.com/example:latest"
+
+    image_config {
+      repository_access_mode = "Vpc"  # checked: must be Vpc not Platform
+    }
+  }
+}
+
+resource "aws_sagemaker_endpoint_configuration" "example" {
+  name = "example-endpoint-config"
+
+  production_variants {                      # checked
+    variant_name           = "primary"
+    model_name             = aws_sagemaker_model.example.name
+    initial_instance_count = 2              # checked: >= 2 for prod
+    instance_type          = "ml.t2.medium"
+  }
+}
+
+resource "aws_sagemaker_data_quality_job_definition" "example" {
+  name     = "example-data-quality-job"
+  role_arn = "arn:aws:iam::123456789012:role/sagemaker-role"
+
+  data_quality_app_specification {
+    image_uri = "123456789012.dkr.ecr.us-east-1.amazonaws.com/example:latest"
+  }
+
+  data_quality_job_input {
+    endpoint_input {
+      endpoint_name = "example-endpoint"
+      local_path    = "/opt/ml/processing/input/endpoint"
+    }
+  }
+
+  data_quality_job_output_config {
+    monitoring_outputs {
+      s3_output {
+        local_path = "/opt/ml/processing/output"
+        s3_uri     = "s3://example-bucket/output"
+      }
+    }
+  }
+
+  job_resources {
+    cluster_config {
+      instance_count    = 1
+      instance_type     = "ml.t3.medium"
+      volume_size_in_gb = 20
+    }
+  }
+
+  network_config {
+    enable_network_isolation                  = true   # checked
+    enable_inter_container_traffic_encryption = true   # checked
+  }
+}
+
+resource "aws_sagemaker_monitoring_schedule" "example" {
+  name = "example-monitoring-schedule"    # checked
+
+  monitoring_schedule_config {            # checked
+    monitoring_job_definition_name = aws_sagemaker_data_quality_job_definition.example.name
+    monitoring_type                = "DataQuality"
+    schedule_config {
+      schedule_expression = "cron(0 * ? * * *)"
+    }
+  }
+}
+
