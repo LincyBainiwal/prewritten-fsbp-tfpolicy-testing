@@ -787,68 +787,68 @@ provider "aws" {
 #                 shared_accounts (snapshots)
 # ============================================================
 
-# TEMP: uncommented to disable deletion_protection before destroy
-resource "aws_db_instance" "example" {
-  identifier                          = "example-db"
-  engine                              = "mysql"
-  engine_version                      = "8.0"
-  instance_class                      = "db.t3.micro"
-  allocated_storage                   = 20
-  username                            = "dbadmin"
-  password                            = "Admin1234!"
-  storage_encrypted                   = true
-  backup_retention_period             = 7
-  deletion_protection                 = false           # ← changed for destroy
-  publicly_accessible                 = false
-  auto_minor_version_upgrade          = true
-  copy_tags_to_snapshot               = true
-  monitoring_interval                 = 60
-  monitoring_role_arn                 = "arn:aws:iam::778091236250:role/rds-monitoring-role"
-  iam_database_authentication_enabled = true
-  multi_az                            = true
-  db_subnet_group_name                = "default"
-  enabled_cloudwatch_logs_exports     = ["audit", "error", "general", "slowquery"]
-  port                                = 3307
-  skip_final_snapshot                 = true
-}
+# # TEMP: uncommented to disable deletion_protection before destroy
+# resource "aws_db_instance" "example" {
+#   identifier                          = "example-db"
+#   engine                              = "mysql"
+#   engine_version                      = "8.0"
+#   instance_class                      = "db.t3.micro"
+#   allocated_storage                   = 20
+#   username                            = "dbadmin"
+#   password                            = "Admin1234!"
+#   storage_encrypted                   = true
+#   backup_retention_period             = 7
+#   deletion_protection                 = false           # ← changed for destroy
+#   publicly_accessible                 = false
+#   auto_minor_version_upgrade          = true
+#   copy_tags_to_snapshot               = true
+#   monitoring_interval                 = 60
+#   monitoring_role_arn                 = "arn:aws:iam::778091236250:role/rds-monitoring-role"
+#   iam_database_authentication_enabled = true
+#   multi_az                            = true
+#   db_subnet_group_name                = "default"
+#   enabled_cloudwatch_logs_exports     = ["audit", "error", "general", "slowquery"]
+#   port                                = 3307
+#   skip_final_snapshot                 = true
+# }
 
-# TEMP: uncommented so Terraform does not try to delete it while cluster still uses it
-resource "aws_rds_cluster_parameter_group" "example" {
-  name        = "example-aurora-mysql-pg"
-  family      = "aurora-mysql8.0"
-  description = "Aurora MySQL parameter group with audit logging"
+# # TEMP: uncommented so Terraform does not try to delete it while cluster still uses it
+# resource "aws_rds_cluster_parameter_group" "example" {
+#   name        = "example-aurora-mysql-pg"
+#   family      = "aurora-mysql8.0"
+#   description = "Aurora MySQL parameter group with audit logging"
 
-  parameter {
-    name  = "server_audit_logging"
-    value = "1"
-  }
+#   parameter {
+#     name  = "server_audit_logging"
+#     value = "1"
+#   }
 
-  parameter {
-    name  = "server_audit_events"
-    value = "CONNECT,QUERY,QUERY_DCL,QUERY_DDL,QUERY_DML"
-  }
-}
+#   parameter {
+#     name  = "server_audit_events"
+#     value = "CONNECT,QUERY,QUERY_DCL,QUERY_DDL,QUERY_DML"
+#   }
+# }
 
-# TEMP: uncommented to disable deletion_protection before destroy
-resource "aws_rds_cluster" "example" {
-  cluster_identifier                  = "example-cluster"
-  engine                              = "aurora-mysql"
-  engine_version                      = "8.0.mysql_aurora.3.04.0"
-  master_username                     = "clusteradmin"
-  master_password                     = "Admin1234!"
-  storage_encrypted                   = true
-  backup_retention_period             = 7
-  deletion_protection                 = false           # ← changed for destroy
-  copy_tags_to_snapshot               = true
-  iam_database_authentication_enabled = true
-  auto_minor_version_upgrade          = true
-  enabled_cloudwatch_logs_exports     = ["audit", "error"]
-  availability_zones                  = ["us-east-1a", "us-east-1b", "us-east-1c"]
-  port                                = 3307
-  backtrack_window                    = 72
-  db_cluster_parameter_group_name     = aws_rds_cluster_parameter_group.example.name
-  skip_final_snapshot                 = true
-}
+# # TEMP: uncommented to disable deletion_protection before destroy
+# resource "aws_rds_cluster" "example" {
+#   cluster_identifier                  = "example-cluster"
+#   engine                              = "aurora-mysql"
+#   engine_version                      = "8.0.mysql_aurora.3.04.0"
+#   master_username                     = "clusteradmin"
+#   master_password                     = "Admin1234!"
+#   storage_encrypted                   = true
+#   backup_retention_period             = 7
+#   deletion_protection                 = false           # ← changed for destroy
+#   copy_tags_to_snapshot               = true
+#   iam_database_authentication_enabled = true
+#   auto_minor_version_upgrade          = true
+#   enabled_cloudwatch_logs_exports     = ["audit", "error"]
+#   availability_zones                  = ["us-east-1a", "us-east-1b", "us-east-1c"]
+#   port                                = 3307
+#   backtrack_window                    = 72
+#   db_cluster_parameter_group_name     = aws_rds_cluster_parameter_group.example.name
+#   skip_final_snapshot                 = true
+# }
 
 # resource "aws_rds_cluster_instance" "example" {
 #   identifier                 = "example-cluster-instance"
@@ -1007,19 +1007,19 @@ resource "aws_rds_cluster" "example" {
 #                 (automatically_after_days or schedule_expression)
 # ============================================================
 
-# resource "aws_secretsmanager_secret" "example" {
-#   name = "example-secret"                # checked
+resource "aws_secretsmanager_secret" "example" {
+  name = "example-secret"                # checked
 
-#   tags = {
-#     LastAccessed = "2025-01-01"          # checked: required by secretsmanager-secret-unused policy
-#   }
-# }
+  tags = {
+    LastAccessed = "2025-01-01"          # checked: required by secretsmanager-secret-unused policy
+  }
+}
 
-# resource "aws_secretsmanager_secret_rotation" "example" {
-#   secret_id           = aws_secretsmanager_secret.example.id
-#   rotation_lambda_arn = "arn:aws:lambda:us-east-1:123456789012:function:example-rotation"
+resource "aws_secretsmanager_secret_rotation" "example" {
+  secret_id           = aws_secretsmanager_secret.example.name  # use .name so rotation-enabled-check policy can match at plan time
+  rotation_lambda_arn = "arn:aws:lambda:us-east-1:778091236250:function:example-rotation"
 
-#   rotation_rules {
-#     automatically_after_days = 30        # checked
-#   }
-# }
+  rotation_rules {
+    automatically_after_days = 30        # checked
+  }
+}
