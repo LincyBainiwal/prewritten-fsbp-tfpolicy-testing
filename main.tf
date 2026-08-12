@@ -805,7 +805,7 @@ resource "aws_db_instance" "example" {
   monitoring_role_arn                 = "arn:aws:iam::778091236250:role/rds-monitoring-role"
   iam_database_authentication_enabled = true          # checked
   multi_az                            = true          # checked
-  db_subnet_group_name                = "example-subnet-group"  # checked
+  db_subnet_group_name                = "default"               # checked
   enabled_cloudwatch_logs_exports     = ["audit", "error", "general", "slowquery"]  # checked: mysql requires audit,error,general,slowquery
   port                                = 3307          # checked: not default 3306
   skip_final_snapshot                 = true
@@ -912,7 +912,7 @@ resource "aws_db_proxy" "example" {
   idle_client_timeout = 1800
   require_tls        = true              # checked
   role_arn           = "arn:aws:iam::778091236250:role/rds-proxy-role"
-  vpc_subnet_ids     = ["subnet-12345678", "subnet-87654321"]
+  vpc_subnet_ids     = ["subnet-00b29a1440b8967e9", "subnet-048cfe24c2f869a51", "subnet-032dfcd262262bc16"]
 
   auth {
     auth_scheme = "SECRETS"
