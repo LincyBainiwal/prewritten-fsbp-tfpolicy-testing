@@ -449,39 +449,38 @@ provider "aws" {
 #                 (snapshot) storage_encrypted
 # ============================================================
 
-# resource "aws_neptune_subnet_group" "example" {
-#   name       = "example-neptune-subnet-group"
-#   subnet_ids = [
-#     "subnet-00b29a1440b8967e9",  # us-east-1a
-#     "subnet-048cfe24c2f869a51",  # us-east-1b
-#     "subnet-032dfcd262262bc16",  # us-east-1c
-#   ]
-# }
+resource "aws_neptune_subnet_group" "example" {
+  name       = "example-neptune-subnet-group"
+  subnet_ids = [
+    "subnet-00b29a1440b8967e9",  # us-east-1a
+    "subnet-048cfe24c2f869a51",  # us-east-1b
+  ]
+}
 
-# resource "aws_neptune_cluster" "example" {
-#   cluster_identifier                  = "example-neptune"
-#   engine                              = "neptune"
-#   backup_retention_period             = 7          # checked
-#   deletion_protection                 = false      # false for easy destroy
-#   storage_encrypted                   = true       # checked
-#   iam_database_authentication_enabled = true       # checked
-#   copy_tags_to_snapshot               = true       # checked
-#   enable_cloudwatch_logs_exports      = ["audit"]  # checked
-#   skip_final_snapshot                 = true
-#   neptune_subnet_group_name           = aws_neptune_subnet_group.example.name
-#   vpc_security_group_ids              = ["sg-0f755fef803db65d1"]
-# }
+resource "aws_neptune_cluster" "example" {
+  cluster_identifier                  = "example-neptune"
+  engine                              = "neptune"
+  backup_retention_period             = 7          # checked: neptune-cluster-backup-retention-check
+  deletion_protection                 = false      # false for easy destroy
+  storage_encrypted                   = true       # checked: neptune-cluster-encrypted
+  iam_database_authentication_enabled = true       # checked: neptune-cluster-iam-database-authentication
+  copy_tags_to_snapshot               = true       # checked: neptune-cluster-copy-tags-to-snapshot-enabled
+  enable_cloudwatch_logs_exports      = ["audit"]  # checked: neptune-cluster-cloudwatch-log-export-enabled
+  skip_final_snapshot                 = true
+  neptune_subnet_group_name           = aws_neptune_subnet_group.example.name
+  vpc_security_group_ids              = ["sg-0f755fef803db65d1"]
+}
 
-# resource "aws_neptune_cluster_instance" "example" {
-#   cluster_identifier = aws_neptune_cluster.example.id
-#   instance_class     = "db.t3.medium"
-#   engine             = "neptune"
-# }
+resource "aws_neptune_cluster_instance" "example" {
+  cluster_identifier = aws_neptune_cluster.example.id
+  instance_class     = "db.t3.medium"
+  engine             = "neptune"
+}
 
-# resource "aws_neptune_cluster_snapshot" "example" {
-#   db_cluster_identifier          = aws_neptune_cluster.example.id
-#   db_cluster_snapshot_identifier = "example-neptune-snapshot"
-# }
+resource "aws_neptune_cluster_snapshot" "example" {
+  db_cluster_identifier          = aws_neptune_cluster.example.id
+  db_cluster_snapshot_identifier = "example-neptune-snapshot"
+}
 
 
 
@@ -945,60 +944,60 @@ provider "aws" {
 #                 enhanced_vpc_routing, config_parameter
 # ============================================================
 
-# resource "aws_redshift_parameter_group" "example" {
-#   name   = "example-redshift-pg"
-#   family = "redshift-1.0"
+resource "aws_redshift_parameter_group" "example" {
+  name   = "example-redshift-pg"
+  family = "redshift-1.0"
 
-#   parameter {
-#     name  = "require_ssl"
-#     value = "true"                      # checked: TLS required
-#   }
-# }
+  parameter {
+    name  = "require_ssl"
+    value = "true"                      # checked: redshift-require-tls-ssl
+  }
+}
 
-# resource "aws_redshift_cluster" "example" {
-#   cluster_identifier                  = "example-cluster"
-#   database_name                       = "exampledb"
-#   master_username                     = "exampleadmin"  # checked: not "awsuser"
-#   master_password                     = "Admin1234!"
-#   node_type                           = "dc2.large"
-#   cluster_type                        = "single-node"
-#   encrypted                           = true           # checked
-#   kms_key_id                          = "arn:aws:kms:us-east-1:123456789012:key/example"  # checked
-#   publicly_accessible                 = false          # checked
-#   enhanced_vpc_routing                = true           # checked
-#   automated_snapshot_retention_period = 7              # checked
-#   allow_version_upgrade               = true           # checked
-#   preferred_maintenance_window        = "sun:05:00-sun:06:00"  # checked
-#   port                                = 5440           # checked: not default 5439
-#   cluster_parameter_group_name        = aws_redshift_parameter_group.example.name  # checked: require_ssl policy
-#   skip_final_snapshot                 = true
-# }
+resource "aws_redshift_cluster" "example" {
+  cluster_identifier                  = "example-redshift"
+  database_name                       = "exampledb"
+  master_username                     = "exampleadmin"          # checked: redshift-default-admin-check (not "awsuser")
+  master_password                     = "Admin1234!"
+  node_type                           = "dc2.large"
+  cluster_type                        = "single-node"
+  encrypted                           = true                    # checked: redshift-cluster-kms-enabled
+  kms_key_id                          = "arn:aws:kms:us-east-1:778091236250:key/alias/aws/redshift"  # checked
+  publicly_accessible                 = false                   # checked: redshift-cluster-public-access-check
+  enhanced_vpc_routing                = true                    # checked: redshift-enhanced-vpc-routing-enabled
+  automated_snapshot_retention_period = 7                       # checked: redshift-backup-enabled
+  allow_version_upgrade               = true                    # checked: redshift-cluster-maintenancesettings-check
+  preferred_maintenance_window        = "sun:05:00-sun:06:00"   # checked: redshift-cluster-maintenancesettings-check
+  port                                = 5440                    # checked: redshift-unrestricted-port-access (not 5439)
+  cluster_parameter_group_name        = aws_redshift_parameter_group.example.name  # checked: redshift-require-tls-ssl
+  skip_final_snapshot                 = true
+}
 
-# resource "aws_redshift_logging" "example" {
-#   cluster_identifier   = aws_redshift_cluster.example.id
-#   log_destination_type = "cloudwatch"    # checked
-#   log_exports          = ["connectionlog", "userlog", "useractivitylog"]  # checked
-# }
+resource "aws_redshift_logging" "example" {
+  cluster_identifier   = aws_redshift_cluster.example.id
+  log_destination_type = "cloudwatch"                           # checked: redshift-cluster-audit-logging-enabled
+  log_exports          = ["connectionlog", "userlog", "useractivitylog"]  # checked
+}
 
-# resource "aws_redshiftserverless_namespace" "example" {
-#   namespace_name      = "example-namespace"
-#   admin_username      = "exampleadmin"   # checked: not "admin"
-#   admin_user_password = "Admin1234!"
-#   log_exports         = ["userlog", "connectionlog", "useractivitylog"]  # checked
-# }
+resource "aws_redshiftserverless_namespace" "example" {
+  namespace_name      = "example-namespace"
+  admin_username      = "exampleadmin"                          # checked: redshift-serverless-default-admin-check (not "admin")
+  admin_user_password = "Admin1234!"
+  log_exports         = ["userlog", "connectionlog", "useractivitylog"]  # checked: redshift-serverless-publish-logs-to-cloudwatch
+}
 
-# resource "aws_redshiftserverless_workgroup" "example" {
-#   namespace_name       = aws_redshiftserverless_namespace.example.namespace_name
-#   workgroup_name       = "example-workgroup"
-#   publicly_accessible  = false           # checked
-#   enhanced_vpc_routing = true            # checked
-#   subnet_ids           = ["subnet-12345678", "subnet-87654321"]
+resource "aws_redshiftserverless_workgroup" "example" {
+  namespace_name       = aws_redshiftserverless_namespace.example.namespace_name
+  workgroup_name       = "example-workgroup"
+  publicly_accessible  = false                                  # checked: redshift-serverless-workgroup-no-public-access
+  enhanced_vpc_routing = true                                   # checked: redshift-serverless-workgroup-routes-within-vpc
+  subnet_ids           = ["subnet-00b29a1440b8967e9", "subnet-048cfe24c2f869a51"]  # real subnets
 
-#   config_parameter {                     # checked: require_ssl
-#     parameter_key   = "require_ssl"
-#     parameter_value = "true"
-#   }
-# }
+  config_parameter {
+    parameter_key   = "require_ssl"
+    parameter_value = "1"                                       # checked: redshift-serverless-workgroup-encrypted-in-transit
+  }
+}
 
 
 # ============================================================
@@ -1459,164 +1458,3 @@ provider "aws" {
 #                 enable_inter_container_traffic_encryption),
 #                 monitoring_schedule_config
 # ============================================================
-
-# IAM role required by all SageMaker resources
-resource "aws_iam_role" "sagemaker" {
-  name = "sagemaker-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { Service = "sagemaker.amazonaws.com" }
-      Action    = "sts:AssumeRole"
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "sagemaker_full" {
-  role       = aws_iam_role.sagemaker.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
-}
-
-# notebook-al2-v3 platform identifier not supported in this account → comment out
-# Policies tested at plan time → Pass
-# resource "aws_sagemaker_notebook_instance" "example" {
-#   name                   = "example-notebook"
-#   role_arn               = aws_iam_role.sagemaker.arn
-#   instance_type          = "ml.t3.medium"
-#   subnet_id              = "subnet-00b29a1440b8967e9"
-#   direct_internet_access = "Disabled"
-#   root_access            = "Disabled"
-#   platform_identifier    = "notebook-al2-v3"
-#   security_groups        = ["sg-12345678"]
-# }
-
-# resource "aws_sagemaker_model" "example" {
-#   name               = "example-model"
-#   execution_role_arn = aws_iam_role.sagemaker.arn  # real role reference
-
-#   enable_network_isolation = true            # checked
-
-#   primary_container {
-#     # AWS built-in XGBoost image (public AWS-managed ECR) — no ECR push needed
-#     # repository_access_mode = "Platform" required for AWS built-in images
-#     # sagemaker-model-private-registry-required → Advisory (not Fail, enforcement=advisory)
-#     image = "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-xgboost:1.7-1"
-
-#     image_config {
-#       repository_access_mode = "Platform"
-#     }
-#   }
-# }
-
-# resource "aws_sagemaker_endpoint_configuration" "example" {
-#   name = "example-endpoint-config"
-
-#   production_variants {                      # checked
-#     variant_name           = "primary"
-#     model_name             = aws_sagemaker_model.example.name
-#     initial_instance_count = 2              # checked: >= 2 for prod
-#     instance_type          = "ml.t2.medium"
-#   }
-# }
-
-# CreateDataQualityJobDefinition is in maintenance mode — not available to new customers
-# CreateMonitoringSchedule depends on it → both commented out
-# Policies tested at plan time → Pass
-# resource "aws_sagemaker_data_quality_job_definition" "example" { ... }
-# resource "aws_sagemaker_monitoring_schedule" "example" { ... }
-
-
-
-
-# ============================================================
-# MSK
-# Policies check: broker_node_group_info[0].connectivity_info
-#                 (public_access.type), encryption_info
-#                 (encryption_in_transit.in_cluster, client_broker),
-#                 client_authentication.unauthenticated
-# ============================================================
-
-resource "aws_msk_cluster" "example" {
-  cluster_name           = "example-cluster"
-  kafka_version          = "3.5.1"
-  number_of_broker_nodes = 2
-
-  broker_node_group_info {
-    instance_type   = "kafka.m5.large"
-    client_subnets  = ["subnet-00b29a1440b8967e9", "subnet-048cfe24c2f869a51"]  # real subnets
-    security_groups = ["sg-0f42bf49d3ee957d7"]                                  # default SG
-    storage_info {
-      ebs_storage_info {
-        volume_size = 100
-      }
-    }
-    connectivity_info {                   # checked
-      public_access {
-        type = "DISABLED"                 # checked: must not be SERVICE_PROVIDED_EIPS
-      }
-    }
-  }
-
-  encryption_info {                       # checked
-    encryption_in_transit {
-      client_broker = "TLS"              # checked
-      in_cluster    = true               # checked
-    }
-  }
-
-  client_authentication {               # checked
-    unauthenticated = false             # checked: must not be true
-    sasl {
-      iam = true                        # checked: at least one auth mechanism required
-    }
-  }
-}
-
-# MSK Connect blocked by org SCP — plan-time policy evaluation only
-# plugin ARN and role ARN require real resources that can't be created (SCP blocks kafka:*)
-# resource "aws_mskconnect_connector" "example" {
-#   name                 = "example-connector"
-#   kafkaconnect_version = "2.7.1"
-#   capacity {
-#     autoscaling {
-#       mcu_count        = 1
-#       min_worker_count = 1
-#       max_worker_count = 2
-#       scale_in_policy  { cpu_utilization_percentage = 20 }
-#       scale_out_policy { cpu_utilization_percentage = 80 }
-#     }
-#   }
-#   connector_configuration = {
-#     "connector.class" = "com.example.ExampleConnector"
-#     "tasks.max"       = "1"
-#   }
-#   kafka_cluster {
-#     apache_kafka_cluster {
-#       bootstrap_servers = aws_msk_cluster.example.bootstrap_brokers_tls
-#       vpc {
-#         security_groups = ["sg-0f42bf49d3ee957d7"]
-#         subnets         = ["subnet-00b29a1440b8967e9", "subnet-048cfe24c2f869a51"]
-#       }
-#     }
-#   }
-#   kafka_cluster_client_authentication { authentication_type = "NONE" }
-#   kafka_cluster_encryption_in_transit { encryption_type = "TLS" }   # checked
-#   plugin {
-#     custom_plugin {
-#       arn      = "arn:aws:kafkaconnect:us-east-1:778091236250:custom-plugin/example"
-#       revision = 1
-#     }
-#   }
-#   service_execution_role_arn = "arn:aws:iam::778091236250:role/msk-connector-role"
-#   log_delivery {                        # checked
-#     worker_log_delivery {
-#       cloudwatch_logs {
-#         enabled   = true                # checked
-#         log_group = "/aws/mskconnect/example"
-#       }
-#     }
-#   }
-# }
-
