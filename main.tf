@@ -1034,65 +1034,101 @@ provider "aws" {
 # ============================================================
 
 # IAM role for Step Functions (created via Terraform since local CLI lacks iam:CreateRole)
-resource "aws_iam_role" "step_functions" {
-  name = "step-functions-role"
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { Service = "states.amazonaws.com" }
-      Action    = "sts:AssumeRole"
-    }]
-  })
-}
+# resource "aws_iam_role" "step_functions" {
+#   name = "step-functions-role"
+#   assume_role_policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [{
+#       Effect    = "Allow"
+#       Principal = { Service = "states.amazonaws.com" }
+#       Action    = "sts:AssumeRole"
+#     }]
+#   })
+# }
 
-resource "aws_iam_role_policy_attachment" "step_functions_logs" {
-  role       = aws_iam_role.step_functions.name
-  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
-}
+# resource "aws_iam_role_policy_attachment" "step_functions_logs" {
+#   role       = aws_iam_role.step_functions.name
+#   policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+# }
 
-# Dedicated CloudWatch log group for Step Functions
-resource "aws_cloudwatch_log_group" "stepfunctions" {
-  name              = "/aws/stepfunctions/example"   # checked: non-empty name
-  retention_in_days = 7
-}
+# # Dedicated CloudWatch log group for Step Functions
+# resource "aws_cloudwatch_log_group" "stepfunctions" {
+#   name              = "/aws/stepfunctions/example"   # checked: non-empty name
+#   retention_in_days = 7
+# }
 
-resource "aws_sfn_state_machine" "example" {
-  name     = "example-state-machine"
-  role_arn = aws_iam_role.step_functions.arn
+# resource "aws_sfn_state_machine" "example" {
+#   name     = "example-state-machine"
+#   role_arn = aws_iam_role.step_functions.arn
 
-  definition = jsonencode({
-    Comment = "Example state machine"
-    StartAt = "HelloWorld"
-    States  = { HelloWorld = { Type = "Pass", End = true } }
-  })
+#   definition = jsonencode({
+#     Comment = "Example state machine"
+#     StartAt = "HelloWorld"
+#     States  = { HelloWorld = { Type = "Pass", End = true } }
+#   })
 
-  logging_configuration {               # checked
-    log_destination        = "${aws_cloudwatch_log_group.stepfunctions.arn}:*"  # fixed: correct log group ref
-    include_execution_data = true
-    level                  = "ALL"      # checked: ERROR / ALL
-  }
-}
+#   logging_configuration {               # checked
+#     log_destination        = "${aws_cloudwatch_log_group.stepfunctions.arn}:*"  # fixed: correct log group ref
+#     include_execution_data = true
+#     level                  = "ALL"      # checked: ERROR / ALL
+#   }
+# }
 
 # ============================================================
 # Transfer
 # Policies check: protocols (no FTP), logging_role
 # ============================================================
 
-# resource "aws_transfer_server" "example" {
-#   protocols              = ["SFTP"]      # checked: no FTP
-#   identity_provider_type = "SERVICE_MANAGED"
-#   endpoint_type          = "PUBLIC"
-#   logging_role           = "arn:aws:iam::123456789012:role/transfer-logging-role"
-# }
+# IAM role for Transfer Family logging (created via Terraform)
+resource "aws_iam_role" "transfer_logging" {
+  name = "transfer-logging-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "transfer.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
 
-# resource "aws_transfer_connector" "example" {
-#   access_role  = "arn:aws:iam::123456789012:role/transfer-role"
-#   url          = "sftp://sftp-partner.example.com"
-#   logging_role = "arn:aws:iam::123456789012:role/transfer-logging-role"  # checked: non-null, non-empty
+resource "aws_iam_role_policy_attachment" "transfer_logging" {
+  role       = aws_iam_role.transfer_logging.name
+  policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+}
 
-#   sftp_config {
-#     user_secret_id    = "arn:aws:secretsmanager:us-east-1:123456789012:secret:example"
-#     trusted_host_keys = ["ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC0example"]  # required by provider
-#   }
-# }
+# IAM role for Transfer connector access
+resource "aws_iam_role" "transfer_connector" {
+  name = "transfer-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "transfer.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "transfer_connector" {
+  role       = aws_iam_role.transfer_connector.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+}
+
+resource "aws_transfer_server" "example" {
+  protocols              = ["SFTP"]                      # checked: no FTP
+  identity_provider_type = "SERVICE_MANAGED"
+  endpoint_type          = "PUBLIC"
+  logging_role           = aws_iam_role.transfer_logging.arn  # checked
+}
+
+resource "aws_transfer_connector" "example" {
+  access_role  = aws_iam_role.transfer_connector.arn
+  url          = "sftp://sftp-partner.example.com"
+  logging_role = aws_iam_role.transfer_logging.arn       # checked: non-null, non-empty
+
+  sftp_config {
+    user_secret_id    = "arn:aws:secretsmanager:us-east-1:778091236250:secret:example-secret-2"
+    trusted_host_keys = ["ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC0example"]
+  }
+}
