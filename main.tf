@@ -845,7 +845,7 @@ resource "aws_rds_cluster" "example" {
   availability_zones                  = ["us-east-1a", "us-east-1b", "us-east-1c"]
   port                                = 3307
   backtrack_window                    = 72
-  db_cluster_parameter_group_name     = aws_rds_cluster_parameter_group.example.name
+  db_cluster_parameter_group_name     = "example-aurora-mysql-pg"
   skip_final_snapshot                 = true
 }
 
